@@ -6,7 +6,7 @@ from singer_sdk import Stream, Tap
 from singer_sdk import typing as th
 
 from tap_hubspot.streams import (
-    # ListsStream,
+    ListsStream,
     CompaniesStream,
     ContactsStream,
     DealsStream,
@@ -15,7 +15,7 @@ from tap_hubspot.streams import (
 
 STREAM_TYPES = [
     ContactsStream,
-    # ListsStream,
+    ListsStream,
     CompaniesStream,
     DealsStream,
     OwnersStream,

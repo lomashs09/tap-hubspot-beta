@@ -40,9 +40,10 @@ class hubspotV1Stream(hubspotStream):
 
     def post_process(self, row: dict, context: Optional[dict]) -> dict:
         """As needed, append or transform raw data to match expected structure."""
-        for name, value in row["properties"].items():
-            row[name] = value.get("value")
-        del row["properties"]
+        if self.properties_url:
+            for name, value in row["properties"].items():
+                row[name] = value.get("value")
+            del row["properties"]
         for field in self.datetime_fields:
             if row.get(field):
                 dt_field = datetime.fromtimestamp(int(row[field]) / 1000)
