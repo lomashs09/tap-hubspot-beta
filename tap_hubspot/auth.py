@@ -1,11 +1,12 @@
 """hubspot Authentication."""
 
+import json
 from datetime import datetime
 from typing import Any, Dict, Optional
+
 import requests
-import json
-from singer_sdk.streams import Stream as RESTStreamBase
 from singer_sdk.authenticators import APIAuthenticatorBase
+from singer_sdk.streams import Stream as RESTStreamBase
 
 
 class OAuth2Authenticator(APIAuthenticatorBase):
@@ -15,7 +16,7 @@ class OAuth2Authenticator(APIAuthenticatorBase):
         self,
         stream: RESTStreamBase,
         config_file: Optional[str] = None,
-        auth_endpoint: Optional[str] = None
+        auth_endpoint: Optional[str] = None,
     ) -> None:
         super().__init__(stream=stream)
         self._auth_endpoint = auth_endpoint
@@ -55,11 +56,11 @@ class OAuth2Authenticator(APIAuthenticatorBase):
     def oauth_request_body(self) -> dict:
         """Define the OAuth request body for the hubspot API."""
         return {
-            'client_id': self._tap._config["client_id"],
-            'client_secret': self._tap._config["client_secret"],
-            'redirect_uri': self._tap._config["redirect_uri"],
-            'refresh_token': self._tap._config["refresh_token"],
-            'grant_type': 'refresh_token',
+            "client_id": self._tap._config["client_id"],
+            "client_secret": self._tap._config["client_secret"],
+            "redirect_uri": self._tap._config["redirect_uri"],
+            "refresh_token": self._tap._config["refresh_token"],
+            "grant_type": "refresh_token",
         }
 
     def is_token_valid(self) -> bool:
@@ -67,8 +68,10 @@ class OAuth2Authenticator(APIAuthenticatorBase):
         now = round(datetime.utcnow().timestamp())
         expires_in = self._tap._config.get("expires_in")
 
-        return not bool((not access_token) or (not expires_in) or ((expires_in - now) < 60))
-    
+        return not bool(
+            (not access_token) or (not expires_in) or ((expires_in - now) < 60)
+        )
+
     @property
     def oauth_request_payload(self) -> dict:
         """Get request body.

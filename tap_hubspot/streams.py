@@ -1,61 +1,132 @@
 """Stream type classes for tap-hubspot."""
 
 from pathlib import Path
-from typing import Any, Dict, Optional, Union, List, Iterable
+from typing import Any, Dict, Iterable, List, Optional, Union
 
-from singer_sdk import typing as th  # JSON Schema typing helpers
+from singer_sdk import typing as th
 
-from tap_hubspot.client import hubspotStream
-
-# TODO: Delete this is if not using json files for schema definition
-SCHEMAS_DIR = Path(__file__).parent / Path("./schemas")
+from tap_hubspot.client_v1 import hubspotV1Stream
+from tap_hubspot.client_v3 import hubspotV3SearchStream, hubspotV3Stream
 
 
-class CompaniesPropertiesStream(hubspotStream):
-    """Companies properties Stream"""
-    name = "companies_properties"
-    path = "companies/v2/properties"
-    primary_keys = ["name"]
+class ContactsV3Stream(hubspotV3SearchStream):
+    """Contacts Stream"""
+
+    name = "contacts_v3"
+    path = "crm/v3/objects/contacts/search"
+    primary_keys = ["id", "updatedAt"]
+    replication_key = "updatedAt"
+    replication_key_filter = "lastmodifieddate"
+
+    properties_url = "properties/v1/contacts/properties"
+
+    base_properties = [
+        th.Property("id", th.StringType),
+        th.Property("createdAt", th.DateTimeType),
+        th.Property("updatedAt", th.DateTimeType),
+        th.Property("archived", th.BooleanType),
+    ]
+
+
+class CompaniesStream(hubspotV3SearchStream):
+    """Companies Stream"""
+
+    name = "companies"
+    path = "crm/v3/objects/companies/search"
+    primary_keys = ["id", "updatedAt"]
+    replication_key = "updatedAt"
+    replication_key_filter = "hs_lastmodifieddate"
+
+    properties_url = "properties/v1/companies/properties"
+
+    base_properties = [
+        th.Property("id", th.StringType),
+        th.Property("createdAt", th.DateTimeType),
+        th.Property("updatedAt", th.DateTimeType),
+        th.Property("archived", th.BooleanType),
+    ]
+
+
+class DealsStream(hubspotV3SearchStream):
+    """Deals Stream"""
+
+    name = "deals"
+    path = "crm/v3/objects/deals/search"
+    primary_keys = ["id", "updatedAt"]
+    replication_key = "updatedAt"
+    replication_key_filter = "hs_lastmodifieddate"
+    properties_url = "properties/v1/deals/properties"
+
+    base_properties = [
+        th.Property("id", th.StringType),
+        th.Property("createdAt", th.DateTimeType),
+        th.Property("updatedAt", th.DateTimeType),
+        th.Property("archived", th.BooleanType),
+    ]
+
+
+class ContactsStream(hubspotV1Stream):
+    """Contacts Stream"""
+
+    name = "contacts"
+    path = "contacts/v1/lists/all/contacts/all"
+    records_jsonpath = "$.contacts[*]"
+    primary_keys = ["vid"]
+    replication_key = None
+    additional_prarams = dict(showListMemberships=True)
+    properties_url = "properties/v1/contacts/properties"
+
+    base_properties = [
+        th.Property("vid", th.IntegerType),
+        th.Property("addedAt", th.DateTimeType),
+        th.Property("portal-id", th.IntegerType),
+        th.Property("list-memberships", th.CustomType({"type": ["array", "string"]})),
+    ]
+
+
+class OwnersStream(hubspotV3Stream):
+    """Owners Stream"""
+
+    name = "owners"
+    path = "crm/v3/owners/"
+    primary_keys = ["id"]
     replication_key = None
 
     schema = th.PropertiesList(
-        th.Property("label", th.StringType),
-        th.Property("description", th.StringType),
-        th.Property("groupName", th.StringType),
-        th.Property("type", th.StringType),
-        th.Property("fieldType", th.StringType),
-        th.Property("fieldLevelPermission", th.StringType),
-        th.Property("hidden", th.BooleanType),
-        th.Property("createdAt", th.DateTimeType),
+        th.Property("id", th.StringType),
+        th.Property("email", th.StringType),
+        th.Property("firstName", th.StringType),
+        th.Property("lastName", th.StringType),
+        th.Property("teams", th.CustomType({"type": ["array", "string"]})),
+        th.Property("archived", th.BooleanType),
+        th.Property("userId", th.IntegerType),
         th.Property("updatedAt", th.DateTimeType),
-        th.Property("deleted", th.StringType),
-        th.Property("referencedObjectType", th.StringType),
-        th.Property("displayOrder", th.NumberType),
-        th.Property("externalOptionsReferenceType", th.StringType),
-        th.Property("searchableInGlobalSearch", th.BooleanType),
-        th.Property("hasUniqueValue", th.BooleanType),
-        th.Property("createdUserId", th.StringType),
-        th.Property("optionSortStrategy", th.StringType),
-        th.Property("numberDisplayHint", th.StringType),
-        th.Property("readOnlyDefinition", th.BooleanType),
-        th.Property("hubspotDefined", th.BooleanType),
-        th.Property("isCustomizedDefault", th.BooleanType),
-        th.Property("textDisplayHint", th.StringType),
-        th.Property("formField", th.BooleanType),
-        th.Property("readOnlyValue", th.BooleanType),
-        th.Property("mutableDefinitionNotDeletable", th.BooleanType),
-        th.Property("favorited", th.BooleanType),
-        th.Property("favoritedOrder", th.NumberType),
-        th.Property("calculated", th.BooleanType),
-        th.Property("externalOptions", th.BooleanType),
-        th.Property("displayMode", th.StringType),
-        th.Property("showCurrencySymbol", th.BooleanType),
-        th.Property("optionsAreMutable", th.BooleanType),
-        th.Property("searchTextAnalysisMode", th.StringType),
-        th.Property("currencyPropertyName", th.StringType),
-        th.Property("updatedUserId", th.StringType)
+        th.Property("updatedAt", th.DateTimeType),
     ).to_dict()
 
 
+class ListsStream(hubspotV1Stream):
+    """Lists Stream"""
 
+    name = "lists"
+    path = "contacts/v1/lists"
+    records_jsonpath = "$.lists[*]"
+    primary_keys = ["listId", "updatedAt"]
+    replication_key = "updatedAt"
 
+    schema = th.PropertiesList(
+        th.Property("listId", th.IntegerType),
+        th.Property("name", th.StringType),
+        th.Property("authorId", th.IntegerType),
+        th.Property("portalId", th.IntegerType),
+        th.Property("internalListId", th.IntegerType),
+        th.Property("dynamic", th.BooleanType),
+        th.Property("listType", th.StringType),
+        th.Property("metaData", th.CustomType({"type": ["object", "string"]})),
+        th.Property("filters", th.CustomType({"type": ["array", "string"]})),
+        th.Property("teamIds", th.CustomType({"type": ["array", "string"]})),
+        th.Property("createdAt", th.DateTimeType),
+        th.Property("updatedAt", th.DateTimeType),
+        th.Property("deleteable", th.BooleanType),
+        th.Property("archived", th.BooleanType),
+    ).to_dict()
