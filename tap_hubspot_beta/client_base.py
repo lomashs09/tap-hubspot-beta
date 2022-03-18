@@ -6,7 +6,7 @@ import requests
 from singer_sdk import typing as th
 from singer_sdk.streams import RESTStream
 
-from tap_hubspot.auth import OAuth2Authenticator
+from tap_hubspot_beta.auth import OAuth2Authenticator
 
 
 class hubspotStream(RESTStream):

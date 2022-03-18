@@ -5,7 +5,7 @@ from typing import Any, Dict, Optional
 import requests
 from singer_sdk.helpers.jsonpath import extract_jsonpath
 
-from tap_hubspot.client_base import hubspotStream
+from tap_hubspot_beta.client_base import hubspotStream
 
 
 class hubspotV3SearchStream(hubspotStream):

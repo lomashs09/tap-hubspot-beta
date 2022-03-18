@@ -1,7 +1,7 @@
 [tool.poetry]
-name = "tap-hubspot"
+name = "tap-hubspot-beta"
 version = "0.0.1"
-description = "`tap-hubspot` is a Singer tap for hubspot, built with the Meltano SDK for Singer Taps."
+description = "`tap-hubspot-beta` is a Singer tap for hubspot, built with the Meltano SDK for Singer Taps."
 authors = ["Hotglue"]
 keywords = [
     "ELT",
@@ -27,7 +27,7 @@ isort = "^5.10.1"
 [tool.isort]
 profile = "black"
 multi_line_output = 3 # Vertical Hanging Indent
-src_paths = "tap_hubspot"
+src_paths = "tap_hubspot_beta"
 
 [build-system]
 # Uncomment the pinned version in favor of the git URL once
@@ -39,4 +39,4 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.scripts]
 # CLI declaration
-tap-hubspot = 'tap_hubspot.tap:Taphubspot.cli'
+tap-hubspot-beta = 'tap_hubspot_beta.tap:Taphubspot.cli'

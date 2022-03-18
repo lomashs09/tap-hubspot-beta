@@ -5,8 +5,8 @@ from typing import Any, Dict, Iterable, List, Optional, Union
 
 from singer_sdk import typing as th
 
-from tap_hubspot.client_v1 import hubspotV1Stream
-from tap_hubspot.client_v3 import hubspotV3SearchStream, hubspotV3Stream
+from tap_hubspot_beta.client_v1 import hubspotV1Stream
+from tap_hubspot_beta.client_v3 import hubspotV3SearchStream, hubspotV3Stream
 
 
 class ContactsV3Stream(hubspotV3SearchStream):
