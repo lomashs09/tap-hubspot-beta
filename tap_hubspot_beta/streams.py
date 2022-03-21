@@ -1,8 +1,4 @@
 """Stream type classes for tap-hubspot."""
-
-from pathlib import Path
-from typing import Any, Dict, Iterable, List, Optional, Union
-
 from singer_sdk import typing as th
 
 from tap_hubspot_beta.client_v1 import hubspotV1Stream
