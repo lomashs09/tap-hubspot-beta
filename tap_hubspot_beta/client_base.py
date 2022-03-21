@@ -1,6 +1,6 @@
 """REST client handling, including hubspotStream base class."""
 
-from functools import cached_property
+from backports.cached_property import cached_property
 
 import requests
 from singer_sdk import typing as th

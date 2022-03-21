@@ -1,10 +1,9 @@
 """REST client handling, including hubspotStream base class."""
 
 from datetime import datetime
-from typing import Any, Dict, Iterable, Optional
+from typing import Any, Dict, Optional
 
 import requests
-from singer_sdk.helpers.jsonpath import extract_jsonpath
 
 from tap_hubspot_beta.client_base import hubspotStream
 
