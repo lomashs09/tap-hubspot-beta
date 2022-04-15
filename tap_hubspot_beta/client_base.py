@@ -3,11 +3,14 @@
 from backports.cached_property import cached_property
 
 import requests
+import logging
 from singer_sdk import typing as th
 from singer_sdk.streams import RESTStream
 
 from tap_hubspot_beta.auth import OAuth2Authenticator
 
+
+logging.getLogger("backoff").setLevel(logging.CRITICAL)
 
 class hubspotStream(RESTStream):
     """hubspot stream class."""
