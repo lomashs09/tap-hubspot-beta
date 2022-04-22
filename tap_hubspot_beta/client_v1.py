@@ -6,16 +6,25 @@ from typing import Any, Dict, Optional
 import requests
 
 from tap_hubspot_beta.client_base import hubspotStream
+from singer_sdk.helpers.jsonpath import extract_jsonpath
 
 
 class hubspotV1Stream(hubspotStream):
     """hubspot stream class."""
+
+    page_size = 100
 
     def get_next_page_token(
         self, response: requests.Response, previous_token: Optional[Any]
     ) -> Optional[Any]:
         """Return a token for identifying next page or None if no more pages."""
         response_json = response.json()
+        if "has-more" not in response_json:
+            items = len(list(extract_jsonpath(self.records_jsonpath, input=response.json())))
+            if items==self.page_size:
+                previous_token = 0 if not previous_token else previous_token.get("offset")
+                offset = self.page_size + previous_token
+                return dict(offset=offset)
         if response_json.get("has-more"):
             offset = response_json.get("offset")
             vid_offset = response_json.get("vid-offset")
@@ -30,7 +39,7 @@ class hubspotV1Stream(hubspotStream):
     ) -> Dict[str, Any]:
         """Return a dictionary of values to be used in URL parameterization."""
         params: dict = {}
-        params["count"] = 100
+        params["count"] = self.page_size
         if next_page_token:
             params.update(next_page_token)
         params.update(self.additional_prarams)
