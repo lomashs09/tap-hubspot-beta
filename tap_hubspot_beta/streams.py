@@ -109,6 +109,7 @@ class ListsStream(hubspotV1Stream):
     records_jsonpath = "$.lists[*]"
     primary_keys = ["listId", "updatedAt"]
     replication_key = "updatedAt"
+    page_size = 250
 
     schema = th.PropertiesList(
         th.Property("listId", th.IntegerType),
