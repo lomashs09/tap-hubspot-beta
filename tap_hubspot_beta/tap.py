@@ -5,12 +5,18 @@ from typing import List
 from singer_sdk import Stream, Tap
 from singer_sdk import typing as th
 
+import backoff
+import requests
+
+
 from tap_hubspot_beta.streams import (
     ListsStream,
     CompaniesStream,
     ContactsStream,
     DealsStream,
     OwnersStream,
+    ContactListsStream,
+    ContactListData,
 )
 
 STREAM_TYPES = [
@@ -19,6 +25,8 @@ STREAM_TYPES = [
     CompaniesStream,
     DealsStream,
     OwnersStream,
+    ContactListsStream,
+    ContactListData,
 ]
 
 
@@ -50,7 +58,6 @@ class Taphubspot(Tap):
 
     def discover_streams(self) -> List[Stream]:
         """Return a list of discovered streams."""
-
         return [stream_class(tap=self) for stream_class in STREAM_TYPES]
 
 
