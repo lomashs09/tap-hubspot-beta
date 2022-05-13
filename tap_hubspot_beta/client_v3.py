@@ -1,11 +1,14 @@
 """REST client handling, including hubspotStream base class."""
 
+import logging
 from typing import Any, Dict, Optional
 
 import requests
 from singer_sdk.helpers.jsonpath import extract_jsonpath
 
 from tap_hubspot_beta.client_base import hubspotStream
+
+logging.getLogger("backoff").setLevel(logging.CRITICAL)
 
 
 class hubspotV3SearchStream(hubspotStream):

@@ -9,8 +9,8 @@ from singer_sdk.streams import RESTStream
 
 from tap_hubspot_beta.auth import OAuth2Authenticator
 
-
 logging.getLogger("backoff").setLevel(logging.CRITICAL)
+
 
 class hubspotStream(RESTStream):
     """hubspot stream class."""
