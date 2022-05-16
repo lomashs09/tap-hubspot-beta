@@ -6,10 +6,10 @@ import requests
 import logging
 from singer_sdk import typing as th
 from singer_sdk.streams import RESTStream
+from singer_sdk.exceptions import FatalAPIError, RetriableAPIError
+from singer_sdk.plugin_base import PluginBase as TapBaseClass
 
 from tap_hubspot_beta.auth import OAuth2Authenticator
-
-logging.getLogger("backoff").setLevel(logging.CRITICAL)
 
 
 class hubspotStream(RESTStream):
@@ -19,6 +19,16 @@ class hubspotStream(RESTStream):
     base_properties = []
     additional_prarams = {}
     properties_url = None
+
+    def __init__(
+        self,
+        tap: TapBaseClass,
+        name = None,
+        schema = None,
+        path = None,
+    ) -> None:
+        logging.getLogger("backoff").setLevel(logging.CRITICAL)
+        super().__init__(name=name, schema=schema, tap=tap, path=path)
 
     @property
     def authenticator(self) -> OAuth2Authenticator:
@@ -51,6 +61,22 @@ class hubspotStream(RESTStream):
             if isinstance(key, tuple) and len(key) == 2 and value.selected:
                 selected_properties.append(key[-1])
         return selected_properties
+    
+    def validate_response(self, response: requests.Response) -> None:
+        """Validate HTTP response."""
+        if 500 <= response.status_code < 600 or response.status_code in [429]:
+            msg = (
+                f"{response.status_code} Server Error: "
+                f"{response.reason} for path: {self.path}"
+            )
+            raise RetriableAPIError(msg)
+
+        elif 400 <= response.status_code < 500:
+            msg = (
+                f"{response.status_code} Client Error: "
+                f"{response.reason} for path: {self.path}"
+            )
+            raise FatalAPIError(msg)
 
     @staticmethod
     def extract_type(field):
