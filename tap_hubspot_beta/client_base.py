@@ -1,4 +1,5 @@
 """REST client handling, including hubspotStream base class."""
+import copy
 
 from backports.cached_property import cached_property
 
@@ -7,7 +8,6 @@ import logging
 from singer_sdk import typing as th
 from singer_sdk.streams import RESTStream
 from singer_sdk.exceptions import FatalAPIError, RetriableAPIError
-from singer_sdk.plugin_base import PluginBase as TapBaseClass
 
 from tap_hubspot_beta.auth import OAuth2Authenticator
 
@@ -19,16 +19,31 @@ class hubspotStream(RESTStream):
     base_properties = []
     additional_prarams = {}
     properties_url = None
+    
+    def request_records(self, context):
+        """Request records from REST endpoint(s), returning response records."""
+        next_page_token = None
+        finished = False
+        decorated_request = self.request_decorator(self._request)
 
-    def __init__(
-        self,
-        tap: TapBaseClass,
-        name = None,
-        schema = None,
-        path = None,
-    ) -> None:
-        logging.getLogger("backoff").setLevel(logging.CRITICAL)
-        super().__init__(name=name, schema=schema, tap=tap, path=path)
+        while not finished:
+            logging.getLogger("backoff").setLevel(logging.CRITICAL)
+            prepared_request = self.prepare_request(
+                context, next_page_token=next_page_token
+            )
+            resp = decorated_request(prepared_request, context)
+            for row in self.parse_response(resp):
+                yield row
+            previous_token = copy.deepcopy(next_page_token)
+            next_page_token = self.get_next_page_token(
+                response=resp, previous_token=previous_token
+            )
+            if next_page_token and next_page_token == previous_token:
+                raise RuntimeError(
+                    f"Loop detected in pagination. "
+                    f"Pagination token {next_page_token} is identical to prior token."
+                )
+            finished = not next_page_token
 
     @property
     def authenticator(self) -> OAuth2Authenticator:
