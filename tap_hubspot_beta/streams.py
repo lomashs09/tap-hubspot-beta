@@ -127,3 +127,63 @@ class ListsStream(hubspotV1Stream):
         th.Property("deleteable", th.BooleanType),
         th.Property("archived", th.BooleanType),
     ).to_dict()
+class ProductsStream(hubspotV3SearchStream):
+    """Products Stream"""
+
+    name = "products"
+    path = "crm/v3/objects/products/search"
+    primary_keys = ["id", "updatedAt"]
+    replication_key = "updatedAt"
+    replication_key_filter = "hs_lastmodifieddate"
+    page_size = 10
+    
+
+    schema = th.PropertiesList(
+        th.Property("id", th.StringType),
+        th.Property("createdAt", th.DateTimeType),
+        th.Property("updatedAt", th.DateTimeType),
+        th.Property("archived", th.BooleanType),
+        th.Property("archivedAt", th.DateTimeType),
+        th.Property("associations", th.CustomType({"type": ["object", "string"]})),
+        th.Property("propertiesWithHistory", th.CustomType({"type": ["object", "string"]})),
+        th.Property("properties",th.ObjectType(
+            th.Property("createdate", th.DateTimeType),
+            th.Property("description", th.StringType),
+            th.Property("hs_lastmodifieddate", th.DateTimeType),
+            th.Property("hs_object_id", th.StringType),
+            th.Property("name", th.StringType),
+            th.Property("price", th.StringType),
+        ))
+    ).to_dict()
+class LineItemsStream(hubspotV3SearchStream):
+    """Products Stream"""
+
+    name = "lineitems"
+    path = "crm/v3/objects/line_items/search"
+    primary_keys = ["id", "updatedAt"]
+    replication_key = "updatedAt"
+    replication_key_filter = "hs_lastmodifieddate"
+    page_size = 10
+    
+
+    schema = th.PropertiesList(
+        th.Property("id", th.StringType),
+        th.Property("createdAt", th.DateTimeType),
+        th.Property("updatedAt", th.DateTimeType),
+        th.Property("archived", th.BooleanType),
+        th.Property("archivedAt", th.DateTimeType),
+        th.Property("associations", th.CustomType({"type": ["object", "string"]})),
+        th.Property("propertiesWithHistory", th.CustomType({"type": ["object", "string"]})),
+        th.Property("properties",th.ObjectType(
+            
+            th.Property("hs_product_id", th.StringType),
+            th.Property("hs_recurring_billing_period", th.StringType),
+            th.Property("name", th.StringType),
+            th.Property("price", th.StringType),
+            th.Property("quantity", th.StringType),
+            th.Property("recurringbillingfrequency", th.StringType),
+            th.Property("createdate", th.DateTimeType),
+            th.Property("hs_lastmodifieddate", th.DateTimeType),
+            th.Property("hs_object_id", th.StringType)
+        ))
+    ).to_dict()

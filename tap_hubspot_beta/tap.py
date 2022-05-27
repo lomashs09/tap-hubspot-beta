@@ -11,6 +11,8 @@ from tap_hubspot_beta.streams import (
     ContactsStream,
     DealsStream,
     OwnersStream,
+    ProductsStream,
+    LineItemsStream,
 )
 
 STREAM_TYPES = [
@@ -19,6 +21,8 @@ STREAM_TYPES = [
     CompaniesStream,
     DealsStream,
     OwnersStream,
+    ProductsStream,
+    LineItemsStream
 ]
 
 
