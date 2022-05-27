@@ -43,14 +43,16 @@ class hubspotV3SearchStream(hubspotStream):
                     "value": start_date_ts_ms,
                 }
             ]
-            payload["properties"] = self.selected_properties
+            if self.properties_url:
+                payload["properties"] = self.selected_properties
             return payload
 
     def post_process(self, row: dict, context: Optional[dict]) -> dict:
         """As needed, append or transform raw data to match expected structure."""
-        for name, value in row["properties"].items():
-            row[name] = value
-        del row["properties"]
+        if self.properties_url:
+            for name, value in row["properties"].items():
+                row[name] = value
+            del row["properties"]
         return row
 
 

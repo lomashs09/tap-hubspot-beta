@@ -7,7 +7,6 @@ from tap_hubspot_beta.client_v3 import hubspotV3SearchStream, hubspotV3Stream
 
 class ContactsV3Stream(hubspotV3SearchStream):
     """Contacts Stream"""
-
     name = "contacts_v3"
     path = "crm/v3/objects/contacts/search"
     primary_keys = ["id", "updatedAt"]
@@ -26,7 +25,6 @@ class ContactsV3Stream(hubspotV3SearchStream):
 
 class CompaniesStream(hubspotV3SearchStream):
     """Companies Stream"""
-
     name = "companies"
     path = "crm/v3/objects/companies/search"
     primary_keys = ["id", "updatedAt"]
@@ -45,7 +43,6 @@ class CompaniesStream(hubspotV3SearchStream):
 
 class DealsStream(hubspotV3SearchStream):
     """Deals Stream"""
-
     name = "deals"
     path = "crm/v3/objects/deals/search"
     primary_keys = ["id", "updatedAt"]
@@ -63,7 +60,6 @@ class DealsStream(hubspotV3SearchStream):
 
 class ContactsStream(hubspotV1Stream):
     """Contacts Stream"""
-
     name = "contacts"
     path = "contacts/v1/lists/all/contacts/all"
     records_jsonpath = "$.contacts[*]"
@@ -82,7 +78,6 @@ class ContactsStream(hubspotV1Stream):
 
 class OwnersStream(hubspotV3Stream):
     """Owners Stream"""
-
     name = "owners"
     path = "crm/v3/owners/"
     primary_keys = ["id"]
@@ -103,7 +98,6 @@ class OwnersStream(hubspotV3Stream):
 
 class ListsStream(hubspotV1Stream):
     """Lists Stream"""
-
     name = "lists"
     path = "contacts/v1/lists"
     records_jsonpath = "$.lists[*]"
@@ -127,16 +121,16 @@ class ListsStream(hubspotV1Stream):
         th.Property("deleteable", th.BooleanType),
         th.Property("archived", th.BooleanType),
     ).to_dict()
+
+
 class ProductsStream(hubspotV3SearchStream):
     """Products Stream"""
-
     name = "products"
     path = "crm/v3/objects/products/search"
     primary_keys = ["id", "updatedAt"]
     replication_key = "updatedAt"
     replication_key_filter = "hs_lastmodifieddate"
     page_size = 10
-    
 
     schema = th.PropertiesList(
         th.Property("id", th.StringType),
@@ -146,25 +140,18 @@ class ProductsStream(hubspotV3SearchStream):
         th.Property("archivedAt", th.DateTimeType),
         th.Property("associations", th.CustomType({"type": ["object", "string"]})),
         th.Property("propertiesWithHistory", th.CustomType({"type": ["object", "string"]})),
-        th.Property("properties",th.ObjectType(
-            th.Property("createdate", th.DateTimeType),
-            th.Property("description", th.StringType),
-            th.Property("hs_lastmodifieddate", th.DateTimeType),
-            th.Property("hs_object_id", th.StringType),
-            th.Property("name", th.StringType),
-            th.Property("price", th.StringType),
-        ))
+        th.Property("properties", th.CustomType({"type": ["object", "string"]}))
     ).to_dict()
+
+
 class LineItemsStream(hubspotV3SearchStream):
     """Products Stream"""
-
     name = "lineitems"
     path = "crm/v3/objects/line_items/search"
     primary_keys = ["id", "updatedAt"]
     replication_key = "updatedAt"
     replication_key_filter = "hs_lastmodifieddate"
     page_size = 10
-    
 
     schema = th.PropertiesList(
         th.Property("id", th.StringType),
@@ -174,16 +161,5 @@ class LineItemsStream(hubspotV3SearchStream):
         th.Property("archivedAt", th.DateTimeType),
         th.Property("associations", th.CustomType({"type": ["object", "string"]})),
         th.Property("propertiesWithHistory", th.CustomType({"type": ["object", "string"]})),
-        th.Property("properties",th.ObjectType(
-            
-            th.Property("hs_product_id", th.StringType),
-            th.Property("hs_recurring_billing_period", th.StringType),
-            th.Property("name", th.StringType),
-            th.Property("price", th.StringType),
-            th.Property("quantity", th.StringType),
-            th.Property("recurringbillingfrequency", th.StringType),
-            th.Property("createdate", th.DateTimeType),
-            th.Property("hs_lastmodifieddate", th.DateTimeType),
-            th.Property("hs_object_id", th.StringType)
-        ))
+        th.Property("properties", th.CustomType({"type": ["object", "string"]}))
     ).to_dict()
