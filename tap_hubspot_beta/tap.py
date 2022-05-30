@@ -5,18 +5,14 @@ from typing import List
 from singer_sdk import Stream, Tap
 from singer_sdk import typing as th
 
-import backoff
-import requests
-
-
 from tap_hubspot_beta.streams import (
-    ListsStream,
     CompaniesStream,
+    ContactListData,
+    ContactListsStream,
     ContactsStream,
     DealsStream,
+    ListsStream,
     OwnersStream,
-    ContactListsStream,
-    ContactListData,
 )
 
 STREAM_TYPES = [

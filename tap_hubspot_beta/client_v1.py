@@ -4,10 +4,9 @@ from datetime import datetime
 from typing import Any, Dict, Optional
 
 import requests
+from singer_sdk.helpers.jsonpath import extract_jsonpath
 
 from tap_hubspot_beta.client_base import hubspotStream
-from singer_sdk.helpers.jsonpath import extract_jsonpath
-from tap_hubspot_beta.auth import OAuth2Authenticator
 
 
 class hubspotV1Stream(hubspotStream):

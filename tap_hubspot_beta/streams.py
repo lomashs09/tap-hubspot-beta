@@ -1,13 +1,15 @@
 """Stream type classes for tap-hubspot."""
-from singer_sdk import typing as th
-from typing import Any, Dict, Optional, List, Iterable
+import json
+from datetime import datetime
+from typing import Any, Dict, Iterable, List, Optional
 
+import requests
+from backports.cached_property import cached_property
+from singer_sdk import typing as th
+
+from tap_hubspot_beta.client_base import hubspotStream
 from tap_hubspot_beta.client_v1 import hubspotV1Stream
 from tap_hubspot_beta.client_v3 import hubspotV3SearchStream, hubspotV3Stream
-from tap_hubspot_beta.client_base import hubspotStream
-import requests
-import json
-from backports.cached_property import cached_property
 
 
 class ContactsV3Stream(hubspotV3SearchStream):
@@ -149,10 +151,9 @@ class ContactListsStream(hubspotStream):
         """Dynamically detect the json schema for the stream.
         This is evaluated prior to any records being retrieved.
         """
-        
         # Init request session
         self._requests_session = requests.Session()
-        # Get the data from Iterable
+        # Get the data from Hubspot
         records = self.request_records(dict())
 
         properties = []
@@ -180,18 +181,9 @@ class ContactListsStream(hubspotStream):
         ignore = ["id", "name"]
         for property in selected_properties:
             if property not in ignore:
-                list_id = property.split("-", 1)
+                list_id = property.split("-")
                 list_id = list_id[-1]
                 yield {"id": list_id.strip(), "name": property}
-
-    @cached_property
-    def selected_properties(self):
-        selected_properties = []
-        for key, value in self.metadata.items():
-            if isinstance(key, tuple) and len(key) == 2 and value.selected:
-                field_name = key[-1]
-                selected_properties.append(field_name)
-        return selected_properties
 
     def get_child_context(self, record: dict, context: Optional[dict]) -> dict:
         """Return a context dictionary for child streams."""
@@ -200,32 +192,33 @@ class ContactListsStream(hubspotStream):
         }
 
 
-class ContactListData(hubspotStream):
+class ContactListData(hubspotV1Stream):
     """Lists Stream"""
 
     name = "contact_list_data"
     records_jsonpath = "$.contacts[*]"
     parent_stream_type = ContactListsStream
-    primary_keys = ["vid"]
+    primary_keys = ["vid", "listId"]
     replication_key = None
-    page_size = 100
     path = "/contacts/v1/lists/{list_id}/contacts/all"
+    properties_url = "properties/v1/contacts/properties"
 
-    schema = th.PropertiesList(
+    base_properties = [
         th.Property("vid", th.IntegerType),
-        th.Property("listId", th.IntegerType),
-        th.Property("addedAt", th.IntegerType),
-        th.Property("authorId", th.IntegerType),
-        th.Property("canonical-vid", th.IntegerType),
-        th.Property("merged-vids", th.CustomType({"type": ["array", "string"]})),
+        th.Property("addedAt", th.DateTimeType),
         th.Property("portal-id", th.IntegerType),
-        th.Property("is-contact", th.BooleanType),
-        th.Property("properties", th.CustomType({"type": ["object", "string"]})),
-        th.Property("form-submissions", th.CustomType({"type": ["array", "string"]})),
-        th.Property("identity-profiles", th.CustomType({"type": ["array", "string"]})),
-        th.Property("merge-audits", th.CustomType({"type": ["array", "string"]})),
-    ).to_dict()
+        th.Property("listId", th.IntegerType),
+    ]
 
-    def post_process(self, row: dict, context: Optional[dict] = None) -> Optional[dict]:
+    def post_process(self, row: dict, context: Optional[dict]) -> dict:
+        """As needed, append or transform raw data to match expected structure."""
+        if self.properties_url:
+            for name, value in row["properties"].items():
+                row[name] = value.get("value")
+            del row["properties"]
+        for field in self.datetime_fields:
+            if row.get(field):
+                dt_field = datetime.fromtimestamp(int(row[field]) / 1000)
+                row[field] = dt_field.isoformat()
         row["listId"] = int(context.get("list_id"))
         return row

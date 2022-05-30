@@ -1,14 +1,13 @@
 """REST client handling, including hubspotStream base class."""
 
-from backports.cached_property import cached_property
+import logging
 
 import requests
-import logging
+from backports.cached_property import cached_property
 from singer_sdk import typing as th
 from singer_sdk.streams import RESTStream
 
 from tap_hubspot_beta.auth import OAuth2Authenticator
-
 
 logging.getLogger("backoff").setLevel(logging.CRITICAL)
 
