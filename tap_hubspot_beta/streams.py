@@ -131,17 +131,15 @@ class ProductsStream(hubspotV3SearchStream):
     replication_key = "updatedAt"
     replication_key_filter = "hs_lastmodifieddate"
     page_size = 10
+    properties_url = "properties/v2/products/properties"
 
-    schema = th.PropertiesList(
+    base_properties = [
         th.Property("id", th.StringType),
         th.Property("createdAt", th.DateTimeType),
         th.Property("updatedAt", th.DateTimeType),
         th.Property("archived", th.BooleanType),
         th.Property("archivedAt", th.DateTimeType),
-        th.Property("associations", th.CustomType({"type": ["object", "string"]})),
-        th.Property("propertiesWithHistory", th.CustomType({"type": ["object", "string"]})),
-        th.Property("properties", th.CustomType({"type": ["object", "string"]}))
-    ).to_dict()
+    ]
 
 
 class LineItemsStream(hubspotV3SearchStream):
@@ -152,14 +150,12 @@ class LineItemsStream(hubspotV3SearchStream):
     replication_key = "updatedAt"
     replication_key_filter = "hs_lastmodifieddate"
     page_size = 10
+    properties_url = "properties/v2/line_items/properties"
 
-    schema = th.PropertiesList(
+    base_properties = [
         th.Property("id", th.StringType),
         th.Property("createdAt", th.DateTimeType),
         th.Property("updatedAt", th.DateTimeType),
         th.Property("archived", th.BooleanType),
         th.Property("archivedAt", th.DateTimeType),
-        th.Property("associations", th.CustomType({"type": ["object", "string"]})),
-        th.Property("propertiesWithHistory", th.CustomType({"type": ["object", "string"]})),
-        th.Property("properties", th.CustomType({"type": ["object", "string"]}))
-    ).to_dict()
+    ]
