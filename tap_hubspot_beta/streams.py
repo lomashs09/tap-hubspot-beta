@@ -3,6 +3,7 @@ from singer_sdk import typing as th
 
 from tap_hubspot_beta.client_v1 import hubspotV1Stream
 from tap_hubspot_beta.client_v3 import hubspotV3SearchStream, hubspotV3Stream
+from tap_hubspot_beta.client_v4 import hubspotV4Stream
 
 
 class ContactsV3Stream(hubspotV3SearchStream):
@@ -30,7 +31,6 @@ class CompaniesStream(hubspotV3SearchStream):
     primary_keys = ["id", "updatedAt"]
     replication_key = "updatedAt"
     replication_key_filter = "hs_lastmodifieddate"
-
     properties_url = "properties/v1/companies/properties"
 
     base_properties = [
@@ -56,6 +56,38 @@ class DealsStream(hubspotV3SearchStream):
         th.Property("updatedAt", th.DateTimeType),
         th.Property("archived", th.BooleanType),
     ]
+
+    def get_child_context(self, record: dict, context) -> dict:
+        return {"id": record["id"]}
+
+
+class AssociationDealsStream(hubspotV4Stream):
+    """Association Base Stream"""
+    primary_keys = ["from_id", "to_id"]
+    parent_stream_type = DealsStream
+
+    schema = th.PropertiesList(
+        th.Property("from_id", th.StringType),
+        th.Property("to_id", th.StringType)
+    ).to_dict()
+
+
+class AssociationDealsCompaniesStream(AssociationDealsStream):
+    """Association Deals -> Companies Stream"""
+    name = "associations_deals_companies"
+    path = "crm/v4/associations/deals/companies/batch/read"
+
+
+class AssociationDealsContactsStream(AssociationDealsStream):
+    """Association Deals -> Contacts Stream"""
+    name = "associations_deals_contacts"
+    path = "crm/v4/associations/deals/contacts/batch/read"
+
+
+class AssociationDealsLineItemsStream(AssociationDealsStream):
+    """Association Deals -> LineItems Stream"""
+    name = "associations_deals_line_items"
+    path = "crm/v4/associations/deals/line_items/batch/read"
 
 
 class ContactsStream(hubspotV1Stream):

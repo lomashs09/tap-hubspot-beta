@@ -78,11 +78,3 @@ class hubspotV3Stream(hubspotStream):
         if next_page_token:
             params["after"] = next_page_token
         return params
-
-    def parse_response(self, response: requests.Response):
-        """Parse the response and return an iterator of result rows."""
-        yield from extract_jsonpath(self.records_jsonpath, input=response.json())
-
-    def post_process(self, row: dict, context: Optional[dict]) -> dict:
-        """As needed, append or transform raw data to match expected structure."""
-        return row
