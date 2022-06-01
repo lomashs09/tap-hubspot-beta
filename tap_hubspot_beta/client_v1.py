@@ -1,5 +1,6 @@
 """REST client handling, including hubspotStream base class."""
 
+import logging
 from datetime import datetime
 from typing import Any, Dict, Optional
 
