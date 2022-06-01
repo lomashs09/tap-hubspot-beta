@@ -5,9 +5,9 @@ from datetime import datetime
 from typing import Any, Dict, Optional
 
 import requests
+from singer_sdk.helpers.jsonpath import extract_jsonpath
 
 from tap_hubspot_beta.client_base import hubspotStream
-from singer_sdk.helpers.jsonpath import extract_jsonpath
 
 
 class hubspotV1Stream(hubspotStream):
@@ -21,9 +21,13 @@ class hubspotV1Stream(hubspotStream):
         """Return a token for identifying next page or None if no more pages."""
         response_json = response.json()
         if "has-more" not in response_json:
-            items = len(list(extract_jsonpath(self.records_jsonpath, input=response.json())))
-            if items==self.page_size:
-                previous_token = 0 if not previous_token else previous_token.get("offset")
+            items = len(
+                list(extract_jsonpath(self.records_jsonpath, input=response.json()))
+            )
+            if items == self.page_size:
+                previous_token = (
+                    0 if not previous_token else previous_token.get("offset")
+                )
                 offset = self.page_size + previous_token
                 return dict(offset=offset)
         if response_json.get("has-more"):

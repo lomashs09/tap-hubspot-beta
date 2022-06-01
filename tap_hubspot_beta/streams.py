@@ -1,6 +1,13 @@
 """Stream type classes for tap-hubspot."""
+import json
+from datetime import datetime
+from typing import Any, Dict, Iterable, List, Optional
+
+import requests
+from backports.cached_property import cached_property
 from singer_sdk import typing as th
 
+from tap_hubspot_beta.client_base import hubspotStream
 from tap_hubspot_beta.client_v1 import hubspotV1Stream
 from tap_hubspot_beta.client_v3 import hubspotV3SearchStream, hubspotV3Stream
 from tap_hubspot_beta.client_v4 import hubspotV4Stream
@@ -153,6 +160,94 @@ class ListsStream(hubspotV1Stream):
         th.Property("deleteable", th.BooleanType),
         th.Property("archived", th.BooleanType),
     ).to_dict()
+
+
+class ContactListsStream(hubspotStream):
+    """Lists Stream"""
+
+    name = "contact_list"
+    parent_stream_type = None
+    records_jsonpath = "$.lists[*]"
+    primary_keys = ["id", "name"]
+    replication_key = None
+    path = "/contacts/v1/lists"
+
+    @cached_property
+    def schema(self) -> dict:
+        """Dynamically detect the json schema for the stream.
+        This is evaluated prior to any records being retrieved.
+        """
+        # Init request session
+        self._requests_session = requests.Session()
+        # Get the data from Hubspot
+        records = self.request_records(dict())
+
+        properties = []
+        property_names = set()
+        name = "id"
+        property_names.add(name)
+        properties.append(th.Property(name, th.StringType))
+        name = "name"
+        property_names.add(name)
+        properties.append(th.Property(name, th.StringType))
+        # Loop through all records – some objects have different keys
+        for record in records:
+            # Add the new property to our list
+            name = f"{record['name']} - {record['listId']}"
+            property_names.add(name)
+            properties.append(th.Property(name, th.StringType))
+
+        # Return the list as a JSON Schema dictionary object
+        property_list = th.PropertiesList(*properties).to_dict()
+
+        return property_list
+
+    def get_records(self, context: Optional[dict]) -> Iterable[dict]:
+        selected_properties = self.selected_properties
+        ignore = ["id", "name"]
+        for property in selected_properties:
+            if property not in ignore:
+                list_id = property.split("-")
+                list_id = list_id[-1]
+                yield {"id": list_id.strip(), "name": property}
+
+    def get_child_context(self, record: dict, context: Optional[dict]) -> dict:
+        """Return a context dictionary for child streams."""
+        return {
+            "list_id": record["id"],
+        }
+
+
+class ContactListData(hubspotV1Stream):
+    """Lists Stream"""
+
+    name = "contact_list_data"
+    records_jsonpath = "$.contacts[*]"
+    parent_stream_type = ContactListsStream
+    primary_keys = ["vid", "listId"]
+    replication_key = None
+    path = "/contacts/v1/lists/{list_id}/contacts/all"
+    properties_url = "properties/v1/contacts/properties"
+
+    base_properties = [
+        th.Property("vid", th.IntegerType),
+        th.Property("addedAt", th.DateTimeType),
+        th.Property("portal-id", th.IntegerType),
+        th.Property("listId", th.IntegerType),
+    ]
+
+    def post_process(self, row: dict, context: Optional[dict]) -> dict:
+        """As needed, append or transform raw data to match expected structure."""
+        if self.properties_url:
+            for name, value in row["properties"].items():
+                row[name] = value.get("value")
+            del row["properties"]
+        for field in self.datetime_fields:
+            if row.get(field):
+                dt_field = datetime.fromtimestamp(int(row[field]) / 1000)
+                row[field] = dt_field.isoformat()
+        row["listId"] = int(context.get("list_id"))
+        return row
 
 
 class AccountStream(hubspotV1Stream):
