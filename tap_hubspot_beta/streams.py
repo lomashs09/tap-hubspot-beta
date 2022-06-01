@@ -155,6 +155,23 @@ class ListsStream(hubspotV1Stream):
     ).to_dict()
 
 
+class AccountStream(hubspotV1Stream):
+    """Account Stream"""
+    name = "account"
+    path = "integrations/v1/me"
+    records_jsonpath = "$"
+    primary_keys = ["portalId"]
+
+    schema = th.PropertiesList(
+        th.Property("portalId", th.IntegerType),
+        th.Property("timeZone", th.StringType),
+        th.Property("accountType", th.StringType),
+        th.Property("currency", th.StringType),
+        th.Property("utcOffset", th.StringType),
+        th.Property("utcOffsetMilliseconds", th.IntegerType),
+    ).to_dict()
+
+
 class ProductsStream(hubspotV3SearchStream):
     """Products Stream"""
     name = "products"
