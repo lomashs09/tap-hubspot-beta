@@ -20,7 +20,7 @@ class hubspotV1Stream(hubspotStream):
     ) -> Optional[Any]:
         """Return a token for identifying next page or None if no more pages."""
         response_json = response.json()
-        if "has-more" not in response_json:
+        if "has-more" not in response_json and "hasMore" not in response_json:
             items = len(
                 list(extract_jsonpath(self.records_jsonpath, input=response.json()))
             )
@@ -30,7 +30,7 @@ class hubspotV1Stream(hubspotStream):
                 )
                 offset = self.page_size + previous_token
                 return dict(offset=offset)
-        if response_json.get("has-more"):
+        if response_json.get("has-more") or response_json.get("hasMore"):
             offset = response_json.get("offset")
             vid_offset = response_json.get("vid-offset")
             if offset:

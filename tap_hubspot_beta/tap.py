@@ -18,7 +18,11 @@ from tap_hubspot_beta.streams import (
     AssociationDealsContactsStream,
     AssociationDealsCompaniesStream,
     AssociationDealsLineItemsStream,
-    AccountStream
+    AccountStream,
+    FormsStream,
+    FormSubmissionsStream,
+    EventsStream,
+    EmailEventsStream
 )
 
 STREAM_TYPES = [
@@ -34,7 +38,11 @@ STREAM_TYPES = [
     AssociationDealsContactsStream,
     AssociationDealsCompaniesStream,
     AssociationDealsLineItemsStream,
-    AccountStream
+    AccountStream,
+    FormsStream,
+    FormSubmissionsStream,
+    EventsStream,
+    EmailEventsStream
 ]
 
 

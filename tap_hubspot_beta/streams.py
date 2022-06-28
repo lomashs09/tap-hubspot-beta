@@ -115,6 +115,109 @@ class ContactsStream(hubspotV1Stream):
     ]
 
 
+class EmailEventsStream(hubspotV1Stream):
+    """EmailEvents Stream"""
+    name = "email_events"
+    path = "email/public/v1/events"
+    records_jsonpath = "$.events[*]"
+    primary_keys = ["listId", "created"]
+    replication_key = "created"
+    page_size = 250
+
+    schema = th.PropertiesList(
+        th.Property("id", th.StringType),
+        th.Property("emailCampaignId", th.IntegerType),
+        th.Property("hmid", th.StringType),
+        th.Property("recipient", th.StringType),
+        th.Property("type", th.StringType),
+        th.Property("userAgent", th.StringType),
+        th.Property("location", th.CustomType({"type": ["object", "string"]})),
+        th.Property("browser", th.CustomType({"type": ["object", "string"]})),
+        th.Property("portalId", th.IntegerType),
+        th.Property("created", th.DateTimeType),
+        th.Property("appName", th.StringType),
+        th.Property("deviceType", th.StringType),
+        th.Property("duration", th.IntegerType),
+        th.Property("sentBy", th.CustomType({"type": ["object", "string"]})),
+        th.Property("smtpId", th.StringType),
+        th.Property("filteredEvent", th.BooleanType),
+        th.Property("appId", th.IntegerType),
+        th.Property("response", th.StringType),
+        th.Property("attempt", th.IntegerType),
+        th.Property("subject", th.StringType),
+        th.Property("cc", th.CustomType({"type": ["array", "string"]})),
+        th.Property("bcc", th.CustomType({"type": ["array", "string"]})),
+        th.Property("replyTo", th.CustomType({"type": ["array", "string"]})),
+        th.Property("from", th.StringType),
+        th.Property("sourceId", th.StringType),
+        th.Property("subscriptions", th.CustomType({"type": ["array", "string"]})),
+        th.Property("portalSubscriptionStatus", th.StringType),
+        th.Property("source", th.StringType),
+    ).to_dict()
+
+
+class EventsStream(hubspotV3Stream):
+    """Events Stream"""
+    name = "events"
+    path = "events/v3/events/"
+    primary_keys = ["id"]
+    replication_key = "occurredAt"
+
+    schema = th.PropertiesList(
+        th.Property("id", th.StringType),
+        th.Property("objectType", th.StringType),
+        th.Property("objectId", th.StringType),
+        th.Property("eventType", th.StringType),
+        th.Property("occurredAt", th.DateTimeType),
+        th.Property("properties", th.CustomType({"type": "object"}))
+    ).to_dict()
+
+
+class FormsStream(hubspotV3Stream):
+    """Forms Stream"""
+    name = "forms"
+    path = "marketing/v3/forms/"
+    primary_keys = ["id"]
+    replication_key = None
+
+    schema = th.PropertiesList(
+        th.Property("id", th.StringType),
+        th.Property("name", th.StringType),
+        th.Property("fieldGroups", th.CustomType({"type": ["array", "string"]})),
+        th.Property("configuration", th.CustomType({"type": "object"})),
+        th.Property("displayOptions", th.CustomType({"type": "object"})),
+        th.Property("legalConsentOptions", th.CustomType({"type": "object"})),
+        th.Property("formType", th.StringType),
+        th.Property("archived", th.BooleanType),
+        th.Property("userId", th.IntegerType),
+        th.Property("createdAt", th.DateTimeType),
+        th.Property("updatedAt", th.DateTimeType),
+    ).to_dict()
+
+    def get_child_context(self, record: dict, context: Optional[dict]) -> dict:
+        """Return a context dictionary for child streams."""
+        return {
+            "form_id": record["id"],
+        }
+
+
+class FormSubmissionsStream(hubspotV1Stream):
+    """FormSubmissions Stream"""
+
+    name = "form_submissions"
+    records_jsonpath = "$.results[*]"
+    parent_stream_type = FormsStream
+    # NOTE: There is no primary_key for this stream
+    replication_key = "submittedAt"
+    path = "/form-integrations/v1/submissions/forms/{form_id}"
+
+    # TODO: Do I need to do some post processing on submittedAt date?
+    schema = th.PropertiesList(
+        th.Property("values", th.CustomType({"type": ["array", "string"]})),
+        th.Property("submittedAt", th.DateTimeType),
+    ).to_dict()
+
+
 class OwnersStream(hubspotV3Stream):
     """Owners Stream"""
     name = "owners"
