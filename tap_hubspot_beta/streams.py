@@ -211,11 +211,17 @@ class FormSubmissionsStream(hubspotV1Stream):
     replication_key = "submittedAt"
     path = "/form-integrations/v1/submissions/forms/{form_id}"
 
-    # TODO: Do I need to do some post processing on submittedAt date?
     schema = th.PropertiesList(
+        th.Property("form_id", th.StringType),
         th.Property("values", th.CustomType({"type": ["array", "string"]})),
         th.Property("submittedAt", th.DateTimeType),
     ).to_dict()
+
+    def post_process(self, row: dict, context: Optional[dict]) -> dict:
+        """As needed, append or transform raw data to match expected structure."""
+        row = super().post_process(row, context)
+        row["form_id"] = context.get("form_id")
+        return row
 
 
 class OwnersStream(hubspotV3Stream):
