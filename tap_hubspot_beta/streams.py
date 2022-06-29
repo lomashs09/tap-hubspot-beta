@@ -114,6 +114,39 @@ class ContactsStream(hubspotV1Stream):
         th.Property("list-memberships", th.CustomType({"type": ["array", "string"]})),
     ]
 
+    def get_child_context(self, record: dict, context: Optional[dict]) -> dict:
+        """Return a context dictionary for child streams."""
+        return {
+            "contact_id": record["vid"],
+        }
+
+
+class ContactEventsStream(hubspotV3Stream):
+    """ContactEvents Stream"""
+    name = "contact_events"
+    path = "events/v3/events/?objectType=contact&objectId={contact_id}"
+
+    records_jsonpath = "$.results[*]"
+    parent_stream_type = ContactsStream
+    primary_keys = ["id"]
+    replication_key = "occurredAt"
+
+    schema = th.PropertiesList(
+        th.Property("objectType", th.StringType),
+        th.Property("objectId", th.StringType),
+        th.Property("eventType", th.StringType),
+        th.Property("occurredAt", th.DateTimeType),
+        th.Property("id", th.StringType),
+        th.Property("contact_id", th.IntegerType),
+        th.Property("properties", th.CustomType({"type": ["object", "string"]})),
+    ).to_dict()
+
+    def post_process(self, row: dict, context: Optional[dict]) -> dict:
+        """As needed, append or transform raw data to match expected structure."""
+        row = super().post_process(row, context)
+        row["contact_id"] = context.get("contact_id")
+        return row
+
 
 class EmailEventsStream(hubspotV1Stream):
     """EmailEvents Stream"""
@@ -153,23 +186,6 @@ class EmailEventsStream(hubspotV1Stream):
         th.Property("subscriptions", th.CustomType({"type": ["array", "string"]})),
         th.Property("portalSubscriptionStatus", th.StringType),
         th.Property("source", th.StringType),
-    ).to_dict()
-
-
-class EventsStream(hubspotV3Stream):
-    """Events Stream"""
-    name = "events"
-    path = "events/v3/events/"
-    primary_keys = ["id"]
-    replication_key = "occurredAt"
-
-    schema = th.PropertiesList(
-        th.Property("id", th.StringType),
-        th.Property("objectType", th.StringType),
-        th.Property("objectId", th.StringType),
-        th.Property("eventType", th.StringType),
-        th.Property("occurredAt", th.DateTimeType),
-        th.Property("properties", th.CustomType({"type": "object"}))
     ).to_dict()
 
 

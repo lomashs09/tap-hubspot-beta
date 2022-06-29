@@ -21,7 +21,7 @@ from tap_hubspot_beta.streams import (
     AccountStream,
     FormsStream,
     FormSubmissionsStream,
-    EventsStream,
+    ContactEventsStream,
     EmailEventsStream
 )
 
@@ -41,7 +41,7 @@ STREAM_TYPES = [
     AccountStream,
     FormsStream,
     FormSubmissionsStream,
-    EventsStream,
+    ContactEventsStream,
     EmailEventsStream
 ]
 
