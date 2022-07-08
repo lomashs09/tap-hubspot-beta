@@ -318,7 +318,7 @@ class ContactListsStream(hubspotStream):
         # Loop through all records – some objects have different keys
         for record in records:
             # Add the new property to our list
-            name = f"{record['name']} - {record['listId']}"
+            name = f"{record['listId']}"
             property_names.add(name)
             properties.append(th.Property(name, th.StringType))
 
