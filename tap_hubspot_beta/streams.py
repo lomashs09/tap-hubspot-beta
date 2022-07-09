@@ -330,11 +330,14 @@ class ContactListsStream(hubspotStream):
     def get_records(self, context: Optional[dict]) -> Iterable[dict]:
         selected_properties = self.selected_properties
         ignore = ["id", "name"]
+        # Init request session
+        self._requests_session = requests.Session()
+        # Get the data from Hubspot
+        records = list(self.request_records(dict()))
         for property in selected_properties:
             if property not in ignore:
-                list_id = property.split("-")
-                list_id = list_id[-1]
-                yield {"id": list_id.strip(), "name": property}
+                list_name = next(r["name"] for r in records if str(r["listId"])==property)
+                yield {"id": property.strip(), "name": list_name}
 
     def get_child_context(self, record: dict, context: Optional[dict]) -> dict:
         """Return a context dictionary for child streams."""
