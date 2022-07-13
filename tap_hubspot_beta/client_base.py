@@ -1,13 +1,12 @@
 """REST client handling, including hubspotStream base class."""
 import copy
-
 import logging
 
 import requests
 from backports.cached_property import cached_property
 from singer_sdk import typing as th
-from singer_sdk.streams import RESTStream
 from singer_sdk.exceptions import FatalAPIError, RetriableAPIError
+from singer_sdk.streams import RESTStream
 
 from tap_hubspot_beta.auth import OAuth2Authenticator
 
@@ -21,7 +20,7 @@ class hubspotStream(RESTStream):
     base_properties = []
     additional_prarams = {}
     properties_url = None
-    
+
     def request_records(self, context):
         """Request records from REST endpoint(s), returning response records."""
         next_page_token = None
@@ -78,7 +77,7 @@ class hubspotStream(RESTStream):
             if isinstance(key, tuple) and len(key) == 2 and value.selected:
                 selected_properties.append(key[-1])
         return selected_properties
-    
+
     def validate_response(self, response: requests.Response) -> None:
         """Validate HTTP response."""
         if 500 <= response.status_code < 600 or response.status_code in [429]:
@@ -98,7 +97,7 @@ class hubspotStream(RESTStream):
     @staticmethod
     def extract_type(field):
         field_type = field.get("type")
-        if field_type in ["string", "enumeration", "phone_number", "date"]:
+        if field_type in ["string", "enumeration", "phone_number", "date", "json"]:
             return th.StringType
         if field_type == "number":
             return th.StringType

@@ -6,23 +6,28 @@ from singer_sdk import Stream, Tap
 from singer_sdk import typing as th
 
 from tap_hubspot_beta.streams import (
+    AccountStream,
+    AssociationDealsCompaniesStream,
+    AssociationDealsContactsStream,
+    AssociationDealsLineItemsStream,
+    CallsStream,
     CompaniesStream,
+    ContactEventsStream,
     ContactListData,
     ContactListsStream,
     ContactsStream,
     DealsStream,
-    ListsStream,
-    OwnersStream,
-    ProductsStream,
-    LineItemsStream,
-    AssociationDealsContactsStream,
-    AssociationDealsCompaniesStream,
-    AssociationDealsLineItemsStream,
-    AccountStream,
+    EmailEventsStream,
+    EmailsStream,
     FormsStream,
     FormSubmissionsStream,
-    ContactEventsStream,
-    EmailEventsStream
+    LineItemsStream,
+    ListsStream,
+    MeetingsStream,
+    NotesStream,
+    OwnersStream,
+    ProductsStream,
+    TasksStream,
 )
 
 STREAM_TYPES = [
@@ -42,7 +47,12 @@ STREAM_TYPES = [
     FormsStream,
     FormSubmissionsStream,
     ContactEventsStream,
-    EmailEventsStream
+    EmailEventsStream,
+    EmailsStream,
+    NotesStream,
+    MeetingsStream,
+    TasksStream,
+    CallsStream,
 ]
 
 
