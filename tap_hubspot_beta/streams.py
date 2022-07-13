@@ -1,5 +1,4 @@
 """Stream type classes for tap-hubspot."""
-import json
 from datetime import datetime
 from typing import Any, Dict, Iterable, List, Optional
 
@@ -13,92 +12,27 @@ from tap_hubspot_beta.client_v3 import hubspotV3SearchStream, hubspotV3Stream
 from tap_hubspot_beta.client_v4 import hubspotV4Stream
 
 
-class ContactsV3Stream(hubspotV3SearchStream):
-    """Contacts Stream"""
-    name = "contacts_v3"
-    path = "crm/v3/objects/contacts/search"
-    primary_keys = ["id", "updatedAt"]
-    replication_key = "updatedAt"
-    replication_key_filter = "lastmodifieddate"
+class AccountStream(hubspotV1Stream):
+    """Account Stream"""
 
-    properties_url = "properties/v1/contacts/properties"
-
-    base_properties = [
-        th.Property("id", th.StringType),
-        th.Property("createdAt", th.DateTimeType),
-        th.Property("updatedAt", th.DateTimeType),
-        th.Property("archived", th.BooleanType),
-    ]
-
-
-class CompaniesStream(hubspotV3SearchStream):
-    """Companies Stream"""
-    name = "companies"
-    path = "crm/v3/objects/companies/search"
-    primary_keys = ["id", "updatedAt"]
-    replication_key = "updatedAt"
-    replication_key_filter = "hs_lastmodifieddate"
-    properties_url = "properties/v1/companies/properties"
-
-    base_properties = [
-        th.Property("id", th.StringType),
-        th.Property("createdAt", th.DateTimeType),
-        th.Property("updatedAt", th.DateTimeType),
-        th.Property("archived", th.BooleanType),
-    ]
-
-
-class DealsStream(hubspotV3SearchStream):
-    """Deals Stream"""
-    name = "deals"
-    path = "crm/v3/objects/deals/search"
-    primary_keys = ["id", "updatedAt"]
-    replication_key = "updatedAt"
-    replication_key_filter = "hs_lastmodifieddate"
-    properties_url = "properties/v1/deals/properties"
-
-    base_properties = [
-        th.Property("id", th.StringType),
-        th.Property("createdAt", th.DateTimeType),
-        th.Property("updatedAt", th.DateTimeType),
-        th.Property("archived", th.BooleanType),
-    ]
-
-    def get_child_context(self, record: dict, context) -> dict:
-        return {"id": record["id"]}
-
-
-class AssociationDealsStream(hubspotV4Stream):
-    """Association Base Stream"""
-    primary_keys = ["from_id", "to_id"]
-    parent_stream_type = DealsStream
+    name = "account"
+    path = "integrations/v1/me"
+    records_jsonpath = "$"
+    primary_keys = ["portalId"]
 
     schema = th.PropertiesList(
-        th.Property("from_id", th.StringType),
-        th.Property("to_id", th.StringType)
+        th.Property("portalId", th.IntegerType),
+        th.Property("timeZone", th.StringType),
+        th.Property("accountType", th.StringType),
+        th.Property("currency", th.StringType),
+        th.Property("utcOffset", th.StringType),
+        th.Property("utcOffsetMilliseconds", th.IntegerType),
     ).to_dict()
-
-
-class AssociationDealsCompaniesStream(AssociationDealsStream):
-    """Association Deals -> Companies Stream"""
-    name = "associations_deals_companies"
-    path = "crm/v4/associations/deals/companies/batch/read"
-
-
-class AssociationDealsContactsStream(AssociationDealsStream):
-    """Association Deals -> Contacts Stream"""
-    name = "associations_deals_contacts"
-    path = "crm/v4/associations/deals/contacts/batch/read"
-
-
-class AssociationDealsLineItemsStream(AssociationDealsStream):
-    """Association Deals -> LineItems Stream"""
-    name = "associations_deals_line_items"
-    path = "crm/v4/associations/deals/line_items/batch/read"
 
 
 class ContactsStream(hubspotV1Stream):
     """Contacts Stream"""
+
     name = "contacts"
     path = "contacts/v1/lists/all/contacts/all"
     records_jsonpath = "$.contacts[*]"
@@ -123,6 +57,7 @@ class ContactsStream(hubspotV1Stream):
 
 class ContactEventsStream(hubspotV3Stream):
     """ContactEvents Stream"""
+
     name = "contact_events"
     path = "events/v3/events/?objectType=contact&objectId={contact_id}"
 
@@ -150,6 +85,7 @@ class ContactEventsStream(hubspotV3Stream):
 
 class EmailEventsStream(hubspotV1Stream):
     """EmailEvents Stream"""
+
     name = "email_events"
     path = "email/public/v1/events"
     records_jsonpath = "$.events[*]"
@@ -191,6 +127,7 @@ class EmailEventsStream(hubspotV1Stream):
 
 class FormsStream(hubspotV3Stream):
     """Forms Stream"""
+
     name = "forms"
     path = "marketing/v3/forms/"
     primary_keys = ["id"]
@@ -242,6 +179,7 @@ class FormSubmissionsStream(hubspotV1Stream):
 
 class OwnersStream(hubspotV3Stream):
     """Owners Stream"""
+
     name = "owners"
     path = "crm/v3/owners/"
     primary_keys = ["id"]
@@ -262,6 +200,7 @@ class OwnersStream(hubspotV3Stream):
 
 class ListsStream(hubspotV1Stream):
     """Lists Stream"""
+
     name = "lists"
     path = "contacts/v1/lists"
     records_jsonpath = "$.lists[*]"
@@ -336,7 +275,9 @@ class ContactListsStream(hubspotStream):
         records = list(self.request_records(dict()))
         for property in selected_properties:
             if property not in ignore:
-                list_name = next(r["name"] for r in records if str(r["listId"])==property)
+                list_name = next(
+                    r["name"] for r in records if str(r["listId"]) == property
+                )
                 yield {"id": property.strip(), "name": list_name}
 
     def get_child_context(self, record: dict, context: Optional[dict]) -> dict:
@@ -378,56 +319,141 @@ class ContactListData(hubspotV1Stream):
         return row
 
 
-class AccountStream(hubspotV1Stream):
-    """Account Stream"""
-    name = "account"
-    path = "integrations/v1/me"
-    records_jsonpath = "$"
-    primary_keys = ["portalId"]
+class ObjectSearchV3(hubspotV3SearchStream):
+    """Base Object Stream"""
+
+    primary_keys = ["id", "updatedAt"]
+    replication_key = "updatedAt"
+
+    base_properties = [
+        th.Property("id", th.StringType),
+        th.Property("createdAt", th.DateTimeType),
+        th.Property("updatedAt", th.DateTimeType),
+        th.Property("archived", th.BooleanType),
+        th.Property("archivedAt", th.DateTimeType),
+    ]
+
+
+class ContactsV3Stream(ObjectSearchV3):
+    """Contacts Stream"""
+
+    name = "contacts_v3"
+    path = "crm/v3/objects/contacts/search"
+    replication_key_filter = "lastmodifieddate"
+    properties_url = "properties/v1/contacts/properties"
+
+
+class CompaniesStream(ObjectSearchV3):
+    """Companies Stream"""
+
+    name = "companies"
+    path = "crm/v3/objects/companies/search"
+    replication_key_filter = "hs_lastmodifieddate"
+    properties_url = "properties/v1/companies/properties"
+
+
+class DealsStream(ObjectSearchV3):
+    """Deals Stream"""
+
+    name = "deals"
+    path = "crm/v3/objects/deals/search"
+    replication_key_filter = "hs_lastmodifieddate"
+    properties_url = "properties/v1/deals/properties"
+
+    def get_child_context(self, record: dict, context) -> dict:
+        return {"id": record["id"]}
+
+
+class ProductsStream(ObjectSearchV3):
+    """Products Stream"""
+
+    name = "products"
+    path = "crm/v3/objects/products/search"
+    replication_key_filter = "hs_lastmodifieddate"
+    properties_url = "properties/v2/products/properties"
+
+
+class EmailsStream(ObjectSearchV3):
+    """Emails Stream"""
+
+    name = "emails"
+    path = "crm/v3/objects/emails/search"
+    replication_key_filter = "hs_lastmodifieddate"
+    properties_url = "properties/v2/emails/properties"
+
+
+class NotesStream(ObjectSearchV3):
+    """Notes Stream"""
+
+    name = "notes"
+    path = "crm/v3/objects/notes/search"
+    replication_key_filter = "hs_lastmodifieddate"
+    properties_url = "properties/v2/notes/properties"
+
+
+class CallsStream(ObjectSearchV3):
+    """Calls Stream"""
+
+    name = "calls"
+    path = "crm/v3/objects/calls/search"
+    replication_key_filter = "hs_lastmodifieddate"
+    properties_url = "properties/v2/calls/properties"
+
+
+class TasksStream(ObjectSearchV3):
+    """Tasks Stream"""
+
+    name = "tasks"
+    path = "crm/v3/objects/tasks/search"
+    replication_key_filter = "hs_lastmodifieddate"
+    properties_url = "properties/v2/tasks/properties"
+
+
+class MeetingsStream(ObjectSearchV3):
+    """Meetings Stream"""
+
+    name = "meetings"
+    path = "crm/v3/objects/meetings/search"
+    replication_key_filter = "hs_lastmodifieddate"
+    properties_url = "properties/v2/meetings/properties"
+
+
+class LineItemsStream(ObjectSearchV3):
+    """Products Stream"""
+
+    name = "lineitems"
+    path = "crm/v3/objects/line_items/search"
+    replication_key_filter = "hs_lastmodifieddate"
+    properties_url = "properties/v2/line_items/properties"
+
+
+class AssociationDealsStream(hubspotV4Stream):
+    """Association Base Stream"""
+
+    primary_keys = ["from_id", "to_id"]
+    parent_stream_type = DealsStream
 
     schema = th.PropertiesList(
-        th.Property("portalId", th.IntegerType),
-        th.Property("timeZone", th.StringType),
-        th.Property("accountType", th.StringType),
-        th.Property("currency", th.StringType),
-        th.Property("utcOffset", th.StringType),
-        th.Property("utcOffsetMilliseconds", th.IntegerType),
+        th.Property("from_id", th.StringType), th.Property("to_id", th.StringType)
     ).to_dict()
 
 
-class ProductsStream(hubspotV3SearchStream):
-    """Products Stream"""
-    name = "products"
-    path = "crm/v3/objects/products/search"
-    primary_keys = ["id", "updatedAt"]
-    replication_key = "updatedAt"
-    replication_key_filter = "hs_lastmodifieddate"
-    page_size = 10
-    properties_url = "properties/v2/products/properties"
+class AssociationDealsCompaniesStream(AssociationDealsStream):
+    """Association Deals -> Companies Stream"""
 
-    base_properties = [
-        th.Property("id", th.StringType),
-        th.Property("createdAt", th.DateTimeType),
-        th.Property("updatedAt", th.DateTimeType),
-        th.Property("archived", th.BooleanType),
-        th.Property("archivedAt", th.DateTimeType),
-    ]
+    name = "associations_deals_companies"
+    path = "crm/v4/associations/deals/companies/batch/read"
 
 
-class LineItemsStream(hubspotV3SearchStream):
-    """Products Stream"""
-    name = "lineitems"
-    path = "crm/v3/objects/line_items/search"
-    primary_keys = ["id", "updatedAt"]
-    replication_key = "updatedAt"
-    replication_key_filter = "hs_lastmodifieddate"
-    page_size = 10
-    properties_url = "properties/v2/line_items/properties"
+class AssociationDealsContactsStream(AssociationDealsStream):
+    """Association Deals -> Contacts Stream"""
 
-    base_properties = [
-        th.Property("id", th.StringType),
-        th.Property("createdAt", th.DateTimeType),
-        th.Property("updatedAt", th.DateTimeType),
-        th.Property("archived", th.BooleanType),
-        th.Property("archivedAt", th.DateTimeType),
-    ]
+    name = "associations_deals_contacts"
+    path = "crm/v4/associations/deals/contacts/batch/read"
+
+
+class AssociationDealsLineItemsStream(AssociationDealsStream):
+    """Association Deals -> LineItems Stream"""
+
+    name = "associations_deals_line_items"
+    path = "crm/v4/associations/deals/line_items/batch/read"
