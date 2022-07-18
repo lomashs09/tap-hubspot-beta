@@ -3,10 +3,12 @@ import copy
 import logging
 
 import requests
+from typing import Any, Dict, Optional
 from backports.cached_property import cached_property
 from singer_sdk import typing as th
 from singer_sdk.exceptions import FatalAPIError, RetriableAPIError
 from singer_sdk.streams import RESTStream
+from singer_sdk.helpers.jsonpath import extract_jsonpath
 
 from tap_hubspot_beta.auth import OAuth2Authenticator
 
@@ -20,6 +22,7 @@ class hubspotStream(RESTStream):
     base_properties = []
     additional_prarams = {}
     properties_url = None
+    page_size = 100
 
     def request_records(self, context):
         """Request records from REST endpoint(s), returning response records."""
@@ -122,3 +125,27 @@ class hubspotStream(RESTStream):
                 properties.append(property)
 
         return th.PropertiesList(*properties).to_dict()
+
+    def get_next_page_token(
+        self, response: requests.Response, previous_token: Optional[Any]
+    ) -> Optional[Any]:
+        """Return a token for identifying next page or None if no more pages."""
+        response_json = response.json()
+        if response_json.get("has-more"):
+            offset = response_json.get("offset")
+            vid_offset = response_json.get("vid-offset")
+            if offset:
+                return dict(offset=offset)
+            elif vid_offset:
+                return dict(vidOffset=vid_offset)
+        return None
+
+    def get_url_params(
+        self, context: Optional[dict], next_page_token: Optional[Any]
+    ) -> Dict[str, Any]:
+        """Return a dictionary of values to be used in URL parameterization."""
+        params: dict = {}
+        params["count"] = self.page_size
+        if next_page_token:
+            params.update(next_page_token)
+        return params
