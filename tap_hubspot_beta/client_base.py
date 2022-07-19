@@ -126,6 +126,9 @@ class hubspotStream(RESTStream):
 
         return th.PropertiesList(*properties).to_dict()
 
+
+class hubspotStreamSchema(hubspotStream):
+    
     def get_next_page_token(
         self, response: requests.Response, previous_token: Optional[Any]
     ) -> Optional[Any]:
