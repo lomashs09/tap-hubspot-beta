@@ -6,7 +6,7 @@ import requests
 from backports.cached_property import cached_property
 from singer_sdk import typing as th
 
-from tap_hubspot_beta.client_base import hubspotStream
+from tap_hubspot_beta.client_base import hubspotStreamSchema
 from tap_hubspot_beta.client_v1 import hubspotV1Stream
 from tap_hubspot_beta.client_v3 import hubspotV3SearchStream, hubspotV3Stream
 from tap_hubspot_beta.client_v4 import hubspotV4Stream
@@ -226,7 +226,7 @@ class ListsStream(hubspotV1Stream):
     ).to_dict()
 
 
-class ContactListsStream(hubspotStream):
+class ContactListsStream(hubspotStreamSchema):
     """Lists Stream"""
 
     name = "contact_list"
