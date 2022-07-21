@@ -30,6 +30,88 @@ class AccountStream(hubspotV1Stream):
     ).to_dict()
 
 
+class EngagementStream(hubspotV1Stream):
+    """Engagement Stream"""
+
+    name = "engagements"
+    path = "engagements/v1/engagements/paged"
+    records_jsonpath = "$.results[*]"
+    primary_keys = ["id"]
+    replication_key = None
+    page_size = 250
+
+    schema = th.PropertiesList(
+        th.Property("id", th.IntegerType),
+        th.Property("portalId", th.IntegerType),
+        th.Property("active", th.BooleanType),
+        th.Property("createdAt", th.DateTimeType),
+        th.Property("lastUpdated", th.DateTimeType),
+        th.Property("createdBy", th.IntegerType),
+        th.Property("modifiedBy", th.IntegerType),
+        th.Property("ownerId", th.IntegerType),
+        th.Property("type", th.StringType),
+        th.Property("uid", th.StringType),
+        th.Property("timestamp", th.DateTimeType),
+        th.Property("source", th.StringType),
+        th.Property("allAccessibleTeamIds", th.ArrayType(th.IntegerType)),
+        th.Property("queueMembershipIds", th.ArrayType(th.IntegerType)),
+        th.Property("bodyPreview", th.StringType),
+        th.Property("bodyPreviewIsTruncated", th.BooleanType),
+        th.Property("bodyPreviewHtml", th.StringType),
+        th.Property("gdprDeleted", th.BooleanType),
+        th.Property("contactIds", th.ArrayType(th.IntegerType)),
+        th.Property("companyIds", th.ArrayType(th.IntegerType)),
+        th.Property("dealIds", th.ArrayType(th.IntegerType)),
+        th.Property("ownerIds", th.ArrayType(th.IntegerType)),
+        th.Property("workflowIds", th.ArrayType(th.IntegerType)),
+        th.Property("ticketIds", th.ArrayType(th.IntegerType)),
+        th.Property("contentIds", th.ArrayType(th.IntegerType)),
+        th.Property("quoteIds", th.ArrayType(th.IntegerType)),
+        th.Property("status", th.StringType),
+        th.Property("forObjectType", th.StringType),
+        th.Property("subject", th.StringType),
+        th.Property("taskType", th.StringType),
+        th.Property("reminders", th.ArrayType(th.IntegerType)),
+        th.Property("sendDefaultReminder", th.BooleanType),
+        th.Property("priority", th.StringType),
+        th.Property("isAllDay", th.BooleanType),
+        th.Property("body", th.StringType),
+        th.Property("disposition", th.StringType),
+        th.Property("toNumber", th.StringType),
+        th.Property("fromNumber", th.StringType),
+        th.Property("durationMilliseconds", th.IntegerType),
+        th.Property("recordingUrl", th.StringType),
+        th.Property("title", th.StringType),
+        th.Property("completionDate", th.DateTimeType),
+        th.Property("from", th.CustomType({"type": ["object", "string"]})),
+        th.Property("to", th.CustomType({"type": ["array", "string"]})),
+        th.Property("cc", th.CustomType({"type": ["array", "string"]})),
+        th.Property("bcc", th.CustomType({"type": ["array", "string"]})),
+        th.Property("sender", th.CustomType({"type": ["object", "string"]})),
+        th.Property("text", th.StringType),
+        th.Property("html", th.StringType),
+        th.Property("trackerKey", th.StringType),
+        th.Property("messageId", th.StringType),
+        th.Property("threadId", th.StringType),
+        th.Property("emailSendEventId", th.CustomType({"type": ["object", "string"]})),
+        th.Property("loggedFrom", th.StringType),
+        th.Property("validationSkipped", th.CustomType({"type": ["array", "string"]})),
+        th.Property("postSendStatus", th.StringType),
+        th.Property("mediaProcessingStatus", th.StringType),
+        th.Property("attachedVideoOpened", th.BooleanType),
+        th.Property("attachedVideoWatched", th.BooleanType),
+        th.Property("pendingInlineImageIds", th.CustomType({"type": ["array", "string"]}))
+    ).to_dict()
+
+    def post_process(self, row: dict, context: Optional[dict]) -> dict:
+        """As needed, append or transform raw data to match expected structure."""
+        flaten_row = {}
+        for group in ["engagement", "associations", "metadata"]:
+            flaten_row.update(row[group])
+        row = super().post_process(flaten_row, context)
+        return row
+
+
 class ContactsStream(hubspotV1Stream):
     """Contacts Stream"""
 
@@ -307,14 +389,7 @@ class ContactListData(hubspotV1Stream):
 
     def post_process(self, row: dict, context: Optional[dict]) -> dict:
         """As needed, append or transform raw data to match expected structure."""
-        if self.properties_url:
-            for name, value in row["properties"].items():
-                row[name] = value.get("value")
-            del row["properties"]
-        for field in self.datetime_fields:
-            if row.get(field):
-                dt_field = datetime.fromtimestamp(int(row[field]) / 1000)
-                row[field] = dt_field.isoformat()
+        super().post_process(row, context)
         row["listId"] = int(context.get("list_id"))
         return row
 
