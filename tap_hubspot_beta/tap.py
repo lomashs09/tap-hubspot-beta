@@ -28,6 +28,7 @@ from tap_hubspot_beta.streams import (
     OwnersStream,
     ProductsStream,
     TasksStream,
+    EngagementStream
 )
 
 STREAM_TYPES = [
@@ -53,6 +54,7 @@ STREAM_TYPES = [
     MeetingsStream,
     TasksStream,
     CallsStream,
+    EngagementStream
 ]
 
 
