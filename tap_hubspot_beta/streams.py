@@ -279,6 +279,23 @@ class OwnersStream(hubspotV3Stream):
         th.Property("updatedAt", th.DateTimeType),
     ).to_dict()
 
+class DeletedContactsV3Stream(hubspotV3Stream):
+    """Contacts Deleted Stream"""
+
+    name = "contacts_deleted"
+    path = "crm/v3/objects/contacts"
+    primary_keys = ["id"]
+    properties_url = "properties/v1/contacts/properties"
+    additional_prarams = dict(archived=True)
+    page_size = 10
+
+    base_properties = [
+        th.Property("id", th.StringType),
+        th.Property("createdAt", th.DateTimeType),
+        th.Property("updatedAt", th.DateTimeType),
+        th.Property("archived", th.BooleanType),
+        th.Property("archivedAt", th.DateTimeType),
+    ]
 
 class ListsStream(hubspotV1Stream):
     """Lists Stream"""

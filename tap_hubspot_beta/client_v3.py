@@ -15,6 +15,8 @@ class hubspotV3SearchStream(hubspotStream):
 
     records_jsonpath = "$.results[*]"
     next_page_token_jsonpath = "$.paging.next.after"
+    filter = None
+    page_size = 100
 
     def get_next_page_token(
         self, response: requests.Response, previous_token: Optional[Any]
@@ -29,19 +31,21 @@ class hubspotV3SearchStream(hubspotStream):
         """Prepare the data payload for the REST API request."""
         payload = {}
         payload["limit"] = 100
+        payload["filters"] = []
+        if self.filter:
+            payload["filters"].append(self.filter)
         if next_page_token:
             payload["after"] = next_page_token
         if self.replication_key:
             start_date = self.get_starting_timestamp(context)
             start_date_ts_ms = int(start_date.timestamp() * 1000)
-
-            payload["filters"] = [
+            payload["filters"].append(
                 {
                     "propertyName": self.replication_key_filter,
                     "operator": "GT",
                     "value": start_date_ts_ms,
                 }
-            ]
+            )
             if self.properties_url:
                 payload["properties"] = self.selected_properties
             return payload
@@ -73,7 +77,8 @@ class hubspotV3Stream(hubspotStream):
     ) -> Dict[str, Any]:
         """Return a dictionary of values to be used in URL parameterization."""
         params: dict = {}
-        params["limit"] = 100
+        params["limit"] = self.page_size
+        params.update(self.additional_prarams)
         if next_page_token:
             params["after"] = next_page_token
         return params
