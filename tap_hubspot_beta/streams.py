@@ -411,6 +411,28 @@ class ContactListData(hubspotV1Stream):
         return row
 
 
+class ContactsIdsV3Stream(hubspotV3SearchStream):
+    """Contacts Stream"""
+
+    name = "contacts_all_ids"
+    path = "crm/v3/objects/contacts/search"
+    primary_keys = ["id"]
+    replication_key = None
+
+    schema = th.PropertiesList(
+        th.Property("id", th.StringType),
+        th.Property("createdAt", th.DateTimeType),
+        th.Property("updatedAt", th.DateTimeType),
+        th.Property("archived", th.BooleanType),
+        th.Property("createdate", th.DateTimeType),
+        th.Property("lastmodifieddate", th.DateTimeType),
+        th.Property("email", th.StringType),
+        th.Property("firstname", th.StringType),
+        th.Property("lastname", th.StringType),
+        th.Property("hs_object_id", th.StringType),
+    ).to_dict()
+
+
 class ObjectSearchV3(hubspotV3SearchStream):
     """Base Object Stream"""
 

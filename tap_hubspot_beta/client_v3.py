@@ -30,7 +30,7 @@ class hubspotV3SearchStream(hubspotStream):
     ) -> Optional[dict]:
         """Prepare the data payload for the REST API request."""
         payload = {}
-        payload["limit"] = 100
+        payload["limit"] = self.page_size
         payload["filters"] = []
         if self.filter:
             payload["filters"].append(self.filter)
@@ -48,7 +48,9 @@ class hubspotV3SearchStream(hubspotStream):
             )
             if self.properties_url:
                 payload["properties"] = self.selected_properties
-            return payload
+            else:
+                payload["properties"] = []
+        return payload
 
     def post_process(self, row: dict, context: Optional[dict]) -> dict:
         """As needed, append or transform raw data to match expected structure."""
