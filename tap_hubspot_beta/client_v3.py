@@ -79,6 +79,16 @@ class hubspotV3Stream(hubspotStream):
         params: dict = {}
         params["limit"] = self.page_size
         params.update(self.additional_prarams)
+        if self.properties_url:
+            params["properties"] = self.selected_properties
         if next_page_token:
             params["after"] = next_page_token
         return params
+
+    def post_process(self, row: dict, context: Optional[dict]) -> dict:
+        """As needed, append or transform raw data to match expected structure."""
+        if self.properties_url:
+            for name, value in row["properties"].items():
+                row[name] = value
+            del row["properties"]
+        return row
