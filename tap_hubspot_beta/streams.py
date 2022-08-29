@@ -5,6 +5,7 @@ from typing import Any, Dict, Iterable, List, Optional
 import requests
 from backports.cached_property import cached_property
 from singer_sdk import typing as th
+from pendulum import parse
 
 from tap_hubspot_beta.client_base import hubspotStreamSchema
 from tap_hubspot_beta.client_v1 import hubspotV1Stream
@@ -136,6 +137,33 @@ class ContactsStream(hubspotV1Stream):
             "contact_id": record["vid"],
         }
 
+    def get_child_bookmark(self, child_stream, child_context):
+        state_date = None
+        if child_stream.tap_state.get("bookmarks"):
+            if child_stream.tap_state["bookmarks"].get(child_stream.name):
+                child_state = child_stream.tap_state["bookmarks"][child_stream.name]
+                if child_state.get("partitions"):
+                    state_date = next((p.get("replication_key_value") for p in child_state["partitions"] if p.get("context")==child_context), None)
+        if state_date:
+            return parse(state_date)
+        return state_date
+
+    def _sync_children(self, child_context: dict) -> None:
+        for child_stream in self.child_streams:
+            if child_stream.selected or child_stream.has_selected_descendents:
+                last_job = self.last_job
+                current_job = child_stream.get_replication_key_signpost(child_context)
+                self.tap_state["bookmarks"]["last_job"] = dict(value=current_job.isoformat())
+                child_state = self.get_child_bookmark(child_stream, child_context)
+                full_event_sync = self.config.get("full_event_sync")
+                partial_event_sync_lookup = self.config.get("partial_event_sync_lookup")
+                if not last_job or not full_event_sync:
+                    child_stream.sync(context=child_context)
+                elif last_job and full_event_sync and ((current_job-last_job).hours >= full_event_sync):
+                    child_stream.sync(context=child_context)
+                elif child_state and partial_event_sync_lookup:
+                    if (last_job-child_state).hours < partial_event_sync_lookup:
+                        child_stream.sync(context=child_context)
 
 class ContactEventsStream(hubspotV3Stream):
     """ContactEvents Stream"""
