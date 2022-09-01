@@ -10,6 +10,8 @@ from singer_sdk.exceptions import FatalAPIError, RetriableAPIError
 from singer_sdk.streams import RESTStream
 from singer_sdk.helpers.jsonpath import extract_jsonpath
 
+from pendulum import parse
+
 from tap_hubspot_beta.auth import OAuth2Authenticator
 
 logging.getLogger("backoff").setLevel(logging.CRITICAL)
@@ -23,6 +25,14 @@ class hubspotStream(RESTStream):
     additional_prarams = {}
     properties_url = None
     page_size = 100
+
+    @cached_property
+    def last_job(self):
+        if self.tap_state.get("bookmarks"):
+            last_job = self.tap_state["bookmarks"].get("last_job")
+            if last_job:
+                return parse(last_job.get("value"))
+        return 
 
     def request_records(self, context):
         """Request records from REST endpoint(s), returning response records."""
