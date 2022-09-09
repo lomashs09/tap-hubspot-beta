@@ -159,7 +159,7 @@ class ContactsStream(hubspotV1Stream):
                 partial_event_sync_lookup = self.config.get("partial_event_sync_lookup")
                 if not last_job or not full_event_sync:
                     child_stream.sync(context=child_context)
-                elif last_job and full_event_sync and ((current_job-child_state).total_hours() >= full_event_sync):
+                elif not child_state or (last_job and full_event_sync and ((current_job-child_state).total_hours() >= full_event_sync)):
                     child_stream.sync(context=child_context)
                 elif child_state and partial_event_sync_lookup:
                     if (last_job-child_state).total_hours() < partial_event_sync_lookup:
