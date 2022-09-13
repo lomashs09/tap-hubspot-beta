@@ -58,7 +58,10 @@ class hubspotV1Stream(hubspotStream):
                 row[name] = value.get("value")
             del row["properties"]
         for field in self.datetime_fields:
-            if row.get(field):
-                dt_field = datetime.fromtimestamp(int(row[field]) / 1000)
-                row[field] = dt_field.isoformat()
+            if row.get(field) is not None:
+                if row.get(field)==0:
+                    row[field] = None
+                else:
+                    dt_field = datetime.fromtimestamp(int(row[field]) / 1000)
+                    row[field] = dt_field.isoformat()
         return row

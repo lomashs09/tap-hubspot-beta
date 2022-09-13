@@ -336,6 +336,33 @@ class ListsStream(hubspotV1Stream):
     ).to_dict()
 
 
+class DealsPipelinesStream(hubspotV1Stream):
+    """Deal Pipelines Stream"""
+
+    name = "deals_pipelines"
+    path = "crm-pipelines/v1/pipelines/deals"
+    records_jsonpath = "$.results[*]"
+    primary_keys = ["pipelineId"]
+    replication_key = None
+    page_size = 250
+
+    schema = th.PropertiesList(
+        th.Property("pipelineId", th.StringType),
+        th.Property("objectType", th.StringType),
+        th.Property("label", th.StringType),
+        th.Property("displayOrder", th.IntegerType),
+        th.Property("createdAt", th.DateTimeType),
+        th.Property("updatedAt", th.DateTimeType),
+        th.Property("active", th.BooleanType),
+        th.Property("stages", th.ArrayType(th.ObjectType(
+            th.Property("stageId", th.StringType),
+            th.Property("label", th.StringType),
+            th.Property("displayOrder", th.IntegerType),
+            th.Property("active", th.BooleanType),
+        ))),
+    ).to_dict()
+
+
 class ContactListsStream(hubspotStreamSchema):
     """Lists Stream"""
 
