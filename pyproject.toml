@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "tap-hubspot-beta"
-version = "0.0.21"
+version = "0.0.22"
 description = "`tap-hubspot-beta` is a Singer tap for hubspot, built with the Meltano SDK for Singer Taps."
 authors = ["Hotglue"]
 keywords = [
