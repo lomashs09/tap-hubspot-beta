@@ -59,7 +59,7 @@ class hubspotV1Stream(hubspotStream):
             del row["properties"]
         for field in self.datetime_fields:
             if row.get(field) is not None:
-                if row.get(field)==0:
+                if row.get(field) in [0, ""]:
                     row[field] = None
                 else:
                     dt_field = datetime.fromtimestamp(int(row[field]) / 1000)
