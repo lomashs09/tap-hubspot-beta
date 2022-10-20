@@ -135,6 +135,7 @@ class ContactsStream(hubspotV1Stream):
         """Return a context dictionary for child streams."""
         return {
             "contact_id": record["vid"],
+            "contact_date": record["addedAt"]
         }
 
     def get_child_bookmark(self, child_stream, child_context):
@@ -158,6 +159,15 @@ class ContactsStream(hubspotV1Stream):
                 partial_event_sync_lookup = self.config.get("partial_event_sync_lookup")
                 if not last_job or not full_event_sync:
                     child_stream.sync(context=child_context)
+                    self.tap_state["bookmarks"]["last_job"] = dict(value=current_job.isoformat())
+                    if child_stream.tap_state.get("bookmarks"):
+                        if child_stream.tap_state["bookmarks"].get(child_stream.name):
+                            child_state = child_stream.tap_state["bookmarks"][child_stream.name]
+                            if child_state.get("partitions"):
+                                child_part = next((p for p in child_state["partitions"] if p.get("context")==child_context), None)
+                                if "replication_key" not in child_part:
+                                    child_part["replication_key"] = child_stream.replication_key
+                                    child_part["replication_key_value"] = child_context["contact_date"]
                 elif (last_job and full_event_sync and ((current_job-last_job).total_hours() >= full_event_sync)):
                     self.tap_state["bookmarks"]["last_job"] = dict(value=current_job.isoformat())
                     child_stream.sync(context=child_context)
