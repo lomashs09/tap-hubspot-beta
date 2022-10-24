@@ -168,6 +168,8 @@ class ContactsStream(hubspotV1Stream):
                 elif child_state and partial_event_sync_lookup:
                     if (last_job-child_state).total_hours() < partial_event_sync_lookup:
                         child_stream.sync(context=child_context)
+                elif child_state is None:
+                    child_stream.sync(context=child_context)
 
                 # set replication date to the contact create date
                 if child_stream.tap_state.get("bookmarks"):
