@@ -154,7 +154,7 @@ class ContactsStream(hubspotV1Stream):
             if child_stream.selected or child_stream.has_selected_descendents:
                 last_job = self.last_job
                 current_job = child_stream.get_replication_key_signpost(child_context)
-                child_state = self.get_child_bookmark(child_stream, child_context)
+                child_state = self.get_child_bookmark(child_stream, {"contact_id": child_context.get("contact_id")})
                 full_event_sync = self.config.get("full_event_sync")
                 partial_event_sync_lookup = self.config.get("partial_event_sync_lookup")
 
