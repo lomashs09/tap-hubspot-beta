@@ -223,7 +223,8 @@ class ContactEventsStream(hubspotV3Stream):
                 if child_state.get("partitions"):
                     child_part = next((p for p in child_state["partitions"] if p["context"].get("contact_id")==context.get("contact_id")), None)
         if child_part.get("replication_key_value"):
-            params["occurredAfter"] = child_part.get("replication_key_value")
+            start_date = parse(child_part.get("replication_key_value"))
+            params["occurredAfter"] = start_date.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
         return params
 
 
