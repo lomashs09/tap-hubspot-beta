@@ -135,7 +135,7 @@ class ContactsStream(hubspotV1Stream):
         """Return a context dictionary for child streams."""
         return {
             "contact_id": record["vid"],
-            "contact_date": record["addedAt"]
+            "contact_date": record.get("createdate")
         }
 
     def get_child_bookmark(self, child_stream, child_context):
@@ -168,15 +168,18 @@ class ContactsStream(hubspotV1Stream):
                 elif child_state and partial_event_sync_lookup:
                     if (last_job-child_state).total_hours() < partial_event_sync_lookup:
                         child_stream.sync(context=child_context)
-                elif child_state is None:
-                    child_stream.sync(context=child_context)
+                elif not child_state:
+                    if child_context.get("contact_date"):
+                        context_date = parse(child_context.get("contact_date"))
+                        if (last_job-context_date).total_hours() < partial_event_sync_lookup:
+                            child_stream.sync(context=child_context)
 
                 # set replication date to the contact create date
                 if child_stream.tap_state.get("bookmarks"):
                     if child_stream.tap_state["bookmarks"].get(child_stream.name):
                         child_state = child_stream.tap_state["bookmarks"][child_stream.name]
                         if child_state.get("partitions"):
-                            child_part = next((p for p in child_state["partitions"] if p.get("context")==child_context), None)
+                            child_part = next((p for p in child_state["partitions"] if p["context"].get("contact_id")==child_context.get("contact_id")), None)
                             if child_part and ("replication_key" not in child_part):
                                 child_part["replication_key"] = child_stream.replication_key
                                 child_part["replication_key_value"] = child_context["contact_date"]
@@ -207,6 +210,21 @@ class ContactEventsStream(hubspotV3Stream):
         row = super().post_process(row, context)
         row["contact_id"] = context.get("contact_id")
         return row
+    
+    def get_url_params(
+        self, context: Optional[dict], next_page_token: Optional[Any]
+    ) -> Dict[str, Any]:
+        params = super().get_url_params(context, next_page_token)
+
+        child_part = {}
+        if self.tap_state.get("bookmarks"):
+            if self.tap_state["bookmarks"].get(self.name):
+                child_state = self.tap_state["bookmarks"][self.name]
+                if child_state.get("partitions"):
+                    child_part = next((p for p in child_state["partitions"] if p["context"].get("contact_id")==context.get("contact_id")), None)
+        if child_part.get("replication_key_value"):
+            params["occurredAfter"] = child_part.get("replication_key_value")
+        return params
 
 
 class EmailEventsStream(hubspotV1Stream):
