@@ -1,6 +1,9 @@
 """Stream type classes for tap-hubspot."""
 from datetime import datetime
 from typing import Any, Dict, Iterable, List, Optional
+import copy
+import singer
+from singer import StateMessage
 
 import requests
 from backports.cached_property import cached_property
@@ -11,7 +14,7 @@ from tap_hubspot_beta.client_base import hubspotStreamSchema
 from tap_hubspot_beta.client_v1 import hubspotV1Stream
 from tap_hubspot_beta.client_v3 import hubspotV3SearchStream, hubspotV3Stream
 from tap_hubspot_beta.client_v4 import hubspotV4Stream
-
+import time
 
 class AccountStream(hubspotV1Stream):
     """Account Stream"""
@@ -160,19 +163,19 @@ class ContactsStream(hubspotV1Stream):
 
                 # Test conditions to sync or not the events
                 if not last_job or not full_event_sync:
-                    child_stream.sync(context=child_context)
+                    child_stream.sync_custom(context=child_context)
                     self.tap_state["bookmarks"]["last_job"] = dict(value=current_job.isoformat())
                 elif (last_job and full_event_sync and ((current_job-last_job).total_hours() >= full_event_sync)):
                     self.tap_state["bookmarks"]["last_job"] = dict(value=current_job.isoformat())
-                    child_stream.sync(context=child_context)
+                    child_stream.sync_custom(context=child_context)
                 elif child_state and partial_event_sync_lookup:
                     if (last_job-child_state).total_hours() < partial_event_sync_lookup:
-                        child_stream.sync(context=child_context)
+                        child_stream.sync_custom(context=child_context)
                 elif not child_state:
                     if child_context.get("contact_date"):
                         context_date = parse(child_context.get("contact_date"))
                         if (last_job-context_date).total_hours() < partial_event_sync_lookup:
-                            child_stream.sync(context=child_context)
+                            child_stream.sync_custom(context=child_context)
 
                 # set replication date to the contact create date
                 if child_stream.tap_state.get("bookmarks"):
@@ -226,6 +229,74 @@ class ContactEventsStream(hubspotV3Stream):
             start_date = parse(child_part.get("replication_key_value"))
             params["occurredAfter"] = start_date.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
         return params
+
+    def _sync_records(  # noqa C901  # too complex
+        self, context: Optional[dict] = None
+    ) -> None:
+        record_count = 0
+        current_context: Optional[dict]
+        context_list: Optional[List[dict]]
+        context_list = [context] if context is not None else self.partitions
+        selected = self.selected
+
+        for current_context in context_list or [{}]:
+            partition_record_count = 0
+            current_context = current_context or None
+            state_partition_context = self._get_state_partition_context(current_context)
+            self._write_starting_replication_value(current_context)
+            child_context: Optional[dict] = (
+                None if current_context is None else copy.copy(current_context)
+            )
+            for record_result in self.get_records(current_context):
+                if isinstance(record_result, tuple):
+                    # Tuple items should be the record and the child context
+                    record, child_context = record_result
+                else:
+                    record = record_result
+                child_context = copy.copy(
+                    self.get_child_context(record=record, context=child_context)
+                )
+                for key, val in (state_partition_context or {}).items():
+                    # Add state context to records if not already present
+                    if key not in record:
+                        record[key] = val
+
+                # Sync children, except when primary mapper filters out the record
+                if self.stream_maps[0].get_filter_result(record):
+                    self._sync_children(child_context)
+                self._check_max_record_limit(record_count)
+                if selected:
+                    if (record_count - 1) % self.STATE_MSG_FREQUENCY == 0:
+                        self._write_state_message()
+                    self._write_record_message(record)
+                record_count += 1
+                partition_record_count += 1
+                self._increment_stream_state(record, context=current_context)
+        parts = self.tap_state["bookmarks"][self.name]["partitions"]
+        for p in parts:
+            if p.get("progress_markers"):
+                p.update(p["progress_markers"])
+                del p["progress_markers"]
+            if p.get("Note"):
+                del p["Note"]
+
+        parts = [p for p in parts if p.get("replication_key_value")]
+        if parts:
+            max_part = max(parts, key=lambda x: list(x["replication_key_value"]))
+            self.tap_state["bookmarks"][self.name]["partitions"] = [max_part]
+            singer.write_message(StateMessage(value=self.tap_state))
+    
+    def sync_custom(self, context: Optional[dict] = None) -> None:
+        msg = f"Beginning {self.replication_method.lower()} sync of '{self.name}'"
+        if context:
+            msg += f" with context: {context}"
+        self.logger.info(f"{msg}...")
+        # Use a replication signpost, if available
+        signpost = self.get_replication_key_signpost(context)
+        if signpost:
+            self._write_replication_key_signpost(context, signpost)
+        # Sync the records themselves:
+        self._sync_records(context)
 
 
 class EmailEventsStream(hubspotV1Stream):
