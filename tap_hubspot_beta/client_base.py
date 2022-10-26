@@ -121,12 +121,18 @@ class hubspotStream(RESTStream):
         else:
             return None
 
+    def request_schema(self, url, headers):
+        response = requests.get(url, headers=headers)
+        self.validate_response(response)
+        return response
+
     @cached_property
     def schema(self):
         properties = self.base_properties
         headers = self.http_headers
         headers.update(self.authenticator.auth_headers or {})
-        response = requests.get(self.url_base + self.properties_url, headers=headers)
+        url = self.url_base + self.properties_url
+        response = self.request_decorator(self.request_schema)(url, headers=headers)
 
         fields = response.json()
         for field in fields:

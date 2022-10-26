@@ -2,8 +2,8 @@
 from datetime import datetime
 from typing import Any, Dict, Iterable, List, Optional
 import copy
-import singer
-from singer import StateMessage
+
+from singer_sdk.exceptions import InvalidStreamSortException
 
 import requests
 from backports.cached_property import cached_property
@@ -15,6 +15,7 @@ from tap_hubspot_beta.client_v1 import hubspotV1Stream
 from tap_hubspot_beta.client_v3 import hubspotV3SearchStream, hubspotV3Stream
 from tap_hubspot_beta.client_v4 import hubspotV4Stream
 import time
+from singer_sdk.helpers._state import log_sort_error
 
 class AccountStream(hubspotV1Stream):
     """Account Stream"""
@@ -242,6 +243,7 @@ class ContactEventsStream(hubspotV3Stream):
         for current_context in context_list or [{}]:
             partition_record_count = 0
             current_context = current_context or None
+            state = self.get_context_state(current_context)
             state_partition_context = self._get_state_partition_context(current_context)
             self._write_starting_replication_value(current_context)
             child_context: Optional[dict] = (
@@ -266,25 +268,32 @@ class ContactEventsStream(hubspotV3Stream):
                     self._sync_children(child_context)
                 self._check_max_record_limit(record_count)
                 if selected:
-                    if (record_count - 1) % self.STATE_MSG_FREQUENCY == 0:
-                        self._write_state_message()
                     self._write_record_message(record)
+                    try:
+                        self._increment_stream_state(record, context=current_context)
+                    except InvalidStreamSortException as ex:
+                        log_sort_error(
+                            log_fn=self.logger.error,
+                            ex=ex,
+                            record_count=record_count + 1,
+                            partition_record_count=partition_record_count + 1,
+                            current_context=current_context,
+                            state_partition_context=state_partition_context,
+                            stream_name=self.name,
+                        )
+                        raise ex
+
                 record_count += 1
                 partition_record_count += 1
-                self._increment_stream_state(record, context=current_context)
-        parts = self.tap_state["bookmarks"][self.name]["partitions"]
-        for p in parts:
-            if p.get("progress_markers"):
-                p.update(p["progress_markers"])
-                del p["progress_markers"]
-            if p.get("Note"):
-                del p["Note"]
+            if current_context == state_partition_context:
+                # Finalize per-partition state only if 1:1 with context
+                self.finalize_state_progress_markers(state)
+        if not context:
+            # Finalize total stream only if we have the full full context.
+            # Otherwise will be finalized by tap at end of sync.
+            self.finalize_state_progress_markers(self.stream_state)
+        self._write_record_count_log(record_count=record_count, context=context)
 
-        parts = [p for p in parts if p.get("replication_key_value")]
-        if parts:
-            max_part = max(parts, key=lambda x: list(x["replication_key_value"]))
-            self.tap_state["bookmarks"][self.name]["partitions"] = [max_part]
-            singer.write_message(StateMessage(value=self.tap_state))
     
     schema_writed = False
 
