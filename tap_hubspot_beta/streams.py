@@ -286,6 +286,8 @@ class ContactEventsStream(hubspotV3Stream):
             self.tap_state["bookmarks"][self.name]["partitions"] = [max_part]
             singer.write_message(StateMessage(value=self.tap_state))
     
+    schema_writed = False
+
     def sync_custom(self, context: Optional[dict] = None) -> None:
         msg = f"Beginning {self.replication_method.lower()} sync of '{self.name}'"
         if context:
@@ -295,6 +297,10 @@ class ContactEventsStream(hubspotV3Stream):
         signpost = self.get_replication_key_signpost(context)
         if signpost:
             self._write_replication_key_signpost(context, signpost)
+        # Send a SCHEMA message to the downstream target:
+        if not self.schema_writed:
+            self._write_schema_message()
+            self.schema_writed = True
         # Sync the records themselves:
         self._sync_records(context)
 
