@@ -9,6 +9,7 @@ from singer_sdk import typing as th
 from singer_sdk.exceptions import FatalAPIError, RetriableAPIError
 from singer_sdk.streams import RESTStream
 from singer_sdk.helpers.jsonpath import extract_jsonpath
+import backoff
 
 from pendulum import parse
 
@@ -168,3 +169,11 @@ class hubspotStreamSchema(hubspotStream):
         if next_page_token:
             params.update(next_page_token)
         return params
+
+    def backoff_wait_generator(self):
+        """The wait generator used by the backoff decorator on request failure. """
+        return backoff.expo(factor=3)
+
+    def backoff_max_tries(self) -> int:
+        """The number of attempts before giving up when retrying requests."""
+        return 8
