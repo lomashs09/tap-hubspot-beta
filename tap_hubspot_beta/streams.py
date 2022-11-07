@@ -593,6 +593,9 @@ class ContactsV3Stream(ObjectSearchV3):
     replication_key_filter = "lastmodifieddate"
     properties_url = "properties/v1/contacts/properties"
 
+    def get_child_context(self, record: dict, context) -> dict:
+        return {"id": record["id"]}
+
 
 class CompaniesStream(ObjectSearchV3):
     """Companies Stream"""
@@ -708,3 +711,21 @@ class AssociationDealsLineItemsStream(AssociationDealsStream):
 
     name = "associations_deals_line_items"
     path = "crm/v4/associations/deals/line_items/batch/read"
+
+
+class AssociationContactsStream(hubspotV4Stream):
+    """Association Base Stream"""
+
+    primary_keys = ["from_id", "to_id"]
+    parent_stream_type = ContactsV3Stream
+
+    schema = th.PropertiesList(
+        th.Property("from_id", th.StringType), th.Property("to_id", th.StringType)
+    ).to_dict()
+
+
+class AssociationContactsCompaniesStream(AssociationContactsStream):
+    """Association Contacts -> Companies Stream"""
+
+    name = "associations_contacts_companies"
+    path = "crm/v4/associations/contacts/companies/batch/read"
