@@ -27,6 +27,29 @@ class hubspotStream(RESTStream):
     properties_url = None
     page_size = 100
 
+    def _request(
+        self, prepared_request: requests.PreparedRequest, context: Optional[dict]
+    ) -> requests.Response:
+
+        authenticator = self.authenticator
+        if authenticator:
+            prepared_request.headers.update(authenticator.auth_headers or {})
+
+        response = self.requests_session.send(prepared_request, timeout=self.timeout)
+        if self._LOG_REQUEST_METRICS:
+            extra_tags = {}
+            if self._LOG_REQUEST_METRIC_URLS:
+                extra_tags["url"] = prepared_request.path_url
+            self._write_request_duration_log(
+                endpoint=self.path,
+                response=response,
+                context=context,
+                extra_tags=extra_tags,
+            )
+        self.validate_response(response)
+        logging.debug("Response received successfully.")
+        return response
+
     @cached_property
     def last_job(self):
         if self.tap_state.get("bookmarks"):
@@ -94,7 +117,7 @@ class hubspotStream(RESTStream):
 
     def validate_response(self, response: requests.Response) -> None:
         """Validate HTTP response."""
-        if 500 <= response.status_code < 600 or response.status_code in [429]:
+        if 500 <= response.status_code < 600 or response.status_code in [429, 401]:
             msg = (
                 f"{response.status_code} Server Error: "
                 f"{response.reason} for path: {self.path}"
