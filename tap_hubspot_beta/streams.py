@@ -590,8 +590,27 @@ class ContactsV3Stream(ObjectSearchV3):
 
     name = "contacts_v3"
     path = "crm/v3/objects/contacts/search"
-    replication_key_filter = "lastmodifieddate"
     properties_url = "properties/v1/contacts/properties"
+
+    @property
+    def replication_key(self):
+        if self.config.get("filter_contacts_created_at"):
+            return "createdAt"
+        return "updatedAt"
+
+    @property
+    def replication_key_filter(self):
+        if self.config.get("filter_contacts_created_at"):
+            return "createdate"
+        return "lastmodifieddate"
+    
+    def apply_catalog(self, catalog) -> None:
+        self._tap_input_catalog = catalog
+        catalog_entry = catalog.get_stream(self.name)
+        if catalog_entry:
+            self.primary_keys = catalog_entry.key_properties
+            if catalog_entry.replication_method:
+                self.forced_replication_method = catalog_entry.replication_method
 
     def get_child_context(self, record: dict, context) -> dict:
         return {"id": record["id"]}
