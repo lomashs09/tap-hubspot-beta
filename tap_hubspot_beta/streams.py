@@ -139,7 +139,7 @@ class ContactsStream(hubspotV1Stream):
         """Return a context dictionary for child streams."""
         return {
             "contact_id": record["vid"],
-            "contact_date": record.get("createdate")
+            "contact_date": record.get("lastmodifieddate")
         }
 
     def get_child_bookmark(self, child_stream, child_context):
@@ -148,7 +148,12 @@ class ContactsStream(hubspotV1Stream):
             if child_stream.tap_state["bookmarks"].get(child_stream.name):
                 child_state = child_stream.tap_state["bookmarks"][child_stream.name]
                 if child_state.get("partitions"):
-                    state_date = next((p.get("replication_key_value") for p in child_state["partitions"] if p.get("context")==child_context), None)
+                    for partition in child_state["partitions"]:
+                        if partition.get("context"):
+                            key = list(child_context.keys())[0]
+                            if partition["context"].get(key) == child_context[key]:
+                                return parse(partition["replication_key_value"])
+            return None
         if state_date:
             return parse(state_date)
         return state_date
@@ -170,6 +175,9 @@ class ContactsStream(hubspotV1Stream):
                     self.tap_state["bookmarks"]["last_job"] = dict(value=current_job.isoformat())
                     child_stream.sync_custom(context=child_context)
                 elif child_state and partial_event_sync_lookup:
+                    if child_context.get("contact_date"):
+                        updated_date = parse(child_context.get("contact_date"))
+                        child_state = max(updated_date, child_state)
                     if (last_job-child_state).total_hours() < partial_event_sync_lookup:
                         child_stream.sync_custom(context=child_context)
                 elif not child_state:
@@ -294,7 +302,6 @@ class ContactEventsStream(hubspotV3Stream):
             self.finalize_state_progress_markers(self.stream_state)
         self._write_record_count_log(record_count=record_count, context=context)
 
-    
     schema_writed = False
 
     def sync_custom(self, context: Optional[dict] = None) -> None:
