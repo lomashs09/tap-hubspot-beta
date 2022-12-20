@@ -152,7 +152,8 @@ class ContactsStream(hubspotV1Stream):
                         if partition.get("context"):
                             key = list(child_context.keys())[0]
                             if partition["context"].get(key) == child_context[key]:
-                                return parse(partition["replication_key_value"])
+                                if partition.get("replication_key_value"):
+                                    return parse(partition["replication_key_value"])
             return None
         if state_date:
             return parse(state_date)
