@@ -581,7 +581,7 @@ class ContactListData(hubspotV1Stream):
 class ObjectSearchV3(hubspotV3SearchStream):
     """Base Object Stream"""
 
-    primary_keys = ["id", "updatedAt"]
+    primary_keys = ["id"]
     replication_key = "updatedAt"
 
     base_properties = [
@@ -632,6 +632,13 @@ class CompaniesStream(ObjectSearchV3):
     replication_key_filter = "hs_lastmodifieddate"
     properties_url = "properties/v1/companies/properties"
 
+class TicketsStream(ObjectSearchV3):
+    """Companies Stream"""
+
+    name = "tickets"
+    path = "crm/v3/objects/tickets/search"
+    replication_key_filter = "hs_lastmodifieddate"
+    properties_url = "properties/v2/tickets/properties"
 
 class DealsStream(ObjectSearchV3):
     """Deals Stream"""
