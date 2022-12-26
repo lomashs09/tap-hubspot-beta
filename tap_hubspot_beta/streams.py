@@ -725,6 +725,16 @@ class AssociationDealsStream(hubspotV4Stream):
         th.Property("from_id", th.StringType), th.Property("to_id", th.StringType)
     ).to_dict()
 
+class AssociationContactsStream(hubspotV4Stream):
+    """Association Base Stream"""
+
+    primary_keys = ["from_id", "to_id"]
+    parent_stream_type = ContactsV3Stream
+
+    schema = th.PropertiesList(
+        th.Property("from_id", th.StringType), th.Property("to_id", th.StringType)
+    ).to_dict()
+
 
 class AssociationDealsCompaniesStream(AssociationDealsStream):
     """Association Deals -> Companies Stream"""
@@ -746,6 +756,11 @@ class AssociationDealsLineItemsStream(AssociationDealsStream):
     name = "associations_deals_line_items"
     path = "crm/v4/associations/deals/line_items/batch/read"
 
+class AssociationContactsTicketsStream(AssociationContactsStream):
+    """Association Contacts -> Tickets Stream"""
+
+    name = "associations_contacts_tickets"
+    path = "crm/v4/associations/contacts/tickets/batch/read"
 
 class AssociationContactsStream(hubspotV4Stream):
     """Association Base Stream"""
