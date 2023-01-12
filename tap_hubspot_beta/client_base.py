@@ -3,12 +3,11 @@ import copy
 import logging
 
 import requests
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, cast, List
 from backports.cached_property import cached_property
 from singer_sdk import typing as th
 from singer_sdk.exceptions import FatalAPIError, RetriableAPIError
 from singer_sdk.streams import RESTStream
-from singer_sdk.helpers.jsonpath import extract_jsonpath
 import backoff
 
 from pendulum import parse
@@ -165,6 +164,66 @@ class hubspotStream(RESTStream):
                 properties.append(property)
 
         return th.PropertiesList(*properties).to_dict()
+
+    def finalize_state_progress_markers(self, state: Optional[dict] = None) -> None:
+
+        def finalize_state_progress_markers(stream_or_partition_state: dict) -> Optional[dict]:
+            """Promote or wipe progress markers once sync is complete."""
+            signpost_value = stream_or_partition_state.pop("replication_key_signpost", None)
+            stream_or_partition_state.pop("starting_replication_value", None)
+            if "progress_markers" in stream_or_partition_state:
+                if "replication_key" in stream_or_partition_state["progress_markers"]:
+                    # Replication keys valid (only) after sync is complete
+                    progress_markers = stream_or_partition_state["progress_markers"]
+                    stream_or_partition_state["replication_key"] = progress_markers.pop(
+                        "replication_key"
+                    )
+                    new_rk_value = progress_markers.pop("replication_key_value")
+                    if signpost_value and new_rk_value > signpost_value:
+                        new_rk_value = signpost_value
+                    stream_or_partition_state["replication_key_value"] = new_rk_value
+
+            # Wipe and return any markers that have not been promoted
+            progress_markers = stream_or_partition_state.pop("progress_markers", {})
+            # Remove auto-generated human-readable note:
+            progress_markers.pop("Note", None)
+            # Return remaining 'progress_markers' if any:
+            return progress_markers or None
+
+        if state is None or state == {}:
+            for child_stream in self.child_streams or []:
+                child_stream.finalize_state_progress_markers()
+
+            if self.tap_state is None:
+                raise ValueError("Cannot write state to missing state dictionary.")
+
+            if "bookmarks" not in self.tap_state:
+                self.tap_state["bookmarks"] = {}
+            if self.name not in self.tap_state["bookmarks"]:
+                self.tap_state["bookmarks"][self.name] = {}
+            stream_state = cast(dict, self.tap_state["bookmarks"][self.name])
+            if "partitions" not in stream_state:
+                stream_state["partitions"] = []
+            stream_state_partitions: List[dict] = stream_state["partitions"]
+
+            context: Optional[dict]
+            for context in self.partitions or [{}]:
+                context = context or None
+
+                state_partition_context = self._get_state_partition_context(context)
+
+                if state_partition_context:
+                    index, found = next(((i, partition_state) for i, partition_state in enumerate(stream_state_partitions) if partition_state["context"] == state_partition_context), (None, None))
+                    if found:
+                        state = found
+                        del stream_state_partitions[index]
+                    else:
+                        state = stream_state_partitions.append({"context": state_partition_context})
+                else:
+                    state = self.stream_state
+                finalize_state_progress_markers(state)
+            return
+        finalize_state_progress_markers(state)
 
 
 class hubspotStreamSchema(hubspotStream):
