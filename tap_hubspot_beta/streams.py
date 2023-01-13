@@ -179,12 +179,12 @@ class ContactsStream(hubspotV1Stream):
                     if child_context.get("contact_date"):
                         updated_date = parse(child_context.get("contact_date"))
                         child_state = max(updated_date, child_state)
-                    if (last_job-child_state).total_hours() < partial_event_sync_lookup:
+                    if (current_job-child_state).total_hours() < partial_event_sync_lookup:
                         child_stream.sync_custom(context=child_context)
                 elif not child_state:
                     if child_context.get("contact_date"):
                         context_date = parse(child_context.get("contact_date"))
-                        if (last_job-context_date).total_hours() < partial_event_sync_lookup:
+                        if (current_job-context_date).total_hours() < partial_event_sync_lookup:
                             child_stream.sync_custom(context=child_context)
 
                 # set replication date to the contact create date
