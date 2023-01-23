@@ -35,6 +35,21 @@ class AccountStream(hubspotV1Stream):
     ).to_dict()
 
 
+class DispositionsStream(hubspotV1Stream):
+    """Dispositions Stream"""
+
+    name = "dispositions"
+    path = "calling/v1/dispositions"
+    records_jsonpath = "$.[*]"
+    primary_keys = ["id"]
+
+    schema = th.PropertiesList(
+        th.Property("id", th.StringType),
+        th.Property("label", th.StringType),
+        th.Property("deleted", th.BooleanType)
+    ).to_dict()
+
+
 class EngagementStream(hubspotV1Stream):
     """Engagement Stream"""
 

@@ -20,6 +20,8 @@ class hubspotV1Stream(hubspotStream):
     ) -> Optional[Any]:
         """Return a token for identifying next page or None if no more pages."""
         response_json = response.json()
+        if isinstance(response_json, list):
+            return None
         if "has-more" not in response_json and "hasMore" not in response_json:
             items = len(
                 list(extract_jsonpath(self.records_jsonpath, input=response.json()))
