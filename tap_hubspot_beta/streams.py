@@ -187,7 +187,7 @@ class ContactsStream(hubspotV1Stream):
                 if not last_job or not full_event_sync:
                     child_stream.sync_custom(context=child_context)
                     self.tap_state["bookmarks"]["last_job"] = dict(value=current_job.isoformat())
-                elif (last_job and full_event_sync and ((current_job-last_job).total_hours() >= full_event_sync)):
+                elif (last_job and full_event_sync and ((current_job-last_job).total_hours() >= full_event_sync)) and current_job.weekday()>=5:
                     self.tap_state["bookmarks"]["last_job"] = dict(value=current_job.isoformat())
                     child_stream.sync_custom(context=child_context)
                 elif child_state and partial_event_sync_lookup:
