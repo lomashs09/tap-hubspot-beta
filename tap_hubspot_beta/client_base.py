@@ -3,12 +3,13 @@ import copy
 import logging
 
 import requests
+import backoff
 from typing import Any, Dict, Optional, cast, List
 from backports.cached_property import cached_property
 from singer_sdk import typing as th
 from singer_sdk.exceptions import FatalAPIError, RetriableAPIError
 from singer_sdk.streams import RESTStream
-import backoff
+from urllib3.exceptions import ProtocolError
 
 from pendulum import parse
 
@@ -224,6 +225,20 @@ class hubspotStream(RESTStream):
                 finalize_state_progress_markers(state)
             return
         finalize_state_progress_markers(state)
+    
+    def request_decorator(self, func):
+        """Instantiate a decorator for handling request failures."""
+        decorator = backoff.on_exception(
+            self.backoff_wait_generator,
+            (
+                RetriableAPIError,
+                requests.exceptions.ReadTimeout,
+                ProtocolError
+            ),
+            max_tries=self.backoff_max_tries,
+            on_backoff=self.backoff_handler,
+        )(func)
+        return decorator
 
 
 class hubspotStreamSchema(hubspotStream):
