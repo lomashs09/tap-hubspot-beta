@@ -233,6 +233,7 @@ class hubspotStream(RESTStream):
             (
                 RetriableAPIError,
                 requests.exceptions.ReadTimeout,
+                requests.exceptions.ConnectionError,
                 ProtocolError
             ),
             max_tries=self.backoff_max_tries,
