@@ -134,7 +134,7 @@ class hubspotStream(RESTStream):
     @staticmethod
     def extract_type(field):
         field_type = field.get("type")
-        if field_type in ["string", "enumeration", "phone_number", "date", "json"]:
+        if field_type in ["string", "enumeration", "phone_number", "date", "json", "object_coordinates"]:
             return th.StringType
         if field_type == "number":
             return th.StringType
@@ -143,7 +143,8 @@ class hubspotStream(RESTStream):
         if field_type == "bool":
             return th.BooleanType
         else:
-            return None
+            # TODO: Changed default because tap errors if type is None
+            return th.StringType
 
     def request_schema(self, url, headers):
         response = requests.get(url, headers=headers)
