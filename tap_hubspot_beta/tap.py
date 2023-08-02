@@ -36,6 +36,7 @@ from tap_hubspot_beta.streams import (
     TicketsStream,
     DispositionsStream,
     MarketingEmailsStream,
+    ContactSubscriptionStatusStream
 )
 
 STREAM_TYPES = [
@@ -69,6 +70,7 @@ STREAM_TYPES = [
     TicketsStream,
     DispositionsStream,
     MarketingEmailsStream,
+    ContactSubscriptionStatusStream
 ]
 
 

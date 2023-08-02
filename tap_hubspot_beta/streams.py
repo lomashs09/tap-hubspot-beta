@@ -4,6 +4,7 @@ from typing import Any, Dict, Iterable, List, Optional
 import copy
 
 from singer_sdk.exceptions import InvalidStreamSortException
+from singer_sdk.helpers.jsonpath import extract_jsonpath
 
 import requests
 from backports.cached_property import cached_property
@@ -148,13 +149,24 @@ class ContactsStream(hubspotV1Stream):
         th.Property("addedAt", th.DateTimeType),
         th.Property("portal-id", th.IntegerType),
         th.Property("list-memberships", th.CustomType({"type": ["array", "string"]})),
+        th.Property("subscriber_email", th.StringType)
     ]
+
+    def parse_response(self, response):
+        response_content = response.json()
+        for record in extract_jsonpath(self.records_jsonpath, response_content):
+            for identity_profile in record['identity-profiles']:
+                    for identity in identity_profile["identities"]:
+                        if identity['type'] == 'EMAIL':
+                           record['subscriber_email'] = identity['value']
+            yield record
 
     def get_child_context(self, record: dict, context: Optional[dict]) -> dict:
         """Return a context dictionary for child streams."""
         return {
             "contact_id": record["vid"],
-            "contact_date": record.get("lastmodifieddate")
+            "contact_date": record.get("lastmodifieddate"),
+            "subscriber_email": record.get("subscriber_email")
         }
 
     def get_child_bookmark(self, child_stream, child_context):
@@ -178,7 +190,10 @@ class ContactsStream(hubspotV1Stream):
         for child_stream in self.child_streams:
             if child_stream.selected or child_stream.has_selected_descendents:
                 last_job = self.last_job
-                current_job = child_stream.get_replication_key_signpost(child_context)
+                if child_stream.get_replication_key_signpost(child_context):
+                    current_job = child_stream.get_replication_key_signpost(child_context)
+                else:
+                    current_job = datetime.utcnow()
                 child_state = self.get_child_bookmark(child_stream, {"contact_id": child_context.get("contact_id")})
                 full_event_sync = self.config.get("full_event_sync")
                 partial_event_sync_lookup = self.config.get("partial_event_sync_lookup")
@@ -211,6 +226,113 @@ class ContactsStream(hubspotV1Stream):
                             if child_part and ("replication_key" not in child_part):
                                 child_part["replication_key"] = child_stream.replication_key
                                 child_part["replication_key_value"] = child_context["contact_date"]
+
+
+class ContactSubscriptionStatusStream(hubspotV3Stream):
+    name = 'contact_subscription_status'
+    path = 'communication-preferences/v3/status/email/{subscriber_email}'
+    records_jsonpath = "$.[*]"
+    parent_stream_type = ContactsStream
+    ignore_parent_replication_keys = True
+    schema_writed = False
+
+    schema = th.PropertiesList(
+        th.Property("recipient", th.StringType),
+        th.Property("subscriptionStatuses", th.ArrayType(
+            th.ObjectType(
+                th.Property("id", th.StringType),
+                th.Property("name", th.StringType),
+                th.Property("description", th.StringType),
+                th.Property("status", th.StringType),
+                th.Property("sourceOfStatus", th.StringType),
+                th.Property("preferenceGroupName", th.StringType),
+                th.Property("legalBasis", th.StringType),
+                th.Property("legalBasisExplanation", th.StringType),
+            )
+        ))
+    ).to_dict()
+
+    def _sync_records(  # noqa C901  # too complex
+        self, context: Optional[dict] = None
+    ) -> None:
+        record_count = 0
+        current_context: Optional[dict]
+        context_list: Optional[List[dict]]
+        context_list = [context] if context is not None else self.partitions
+        selected = self.selected
+
+        for current_context in context_list or [{}]:
+            partition_record_count = 0
+            current_context = current_context or None
+            state = self.get_context_state(current_context)
+            state_partition_context = self._get_state_partition_context(current_context)
+            self._write_starting_replication_value(current_context)
+            child_context: Optional[dict] = (
+                None if current_context is None else copy.copy(current_context)
+            )
+            for record_result in self.get_records(current_context):
+                if isinstance(record_result, tuple):
+                    # Tuple items should be the record and the child context
+                    record, child_context = record_result
+                else:
+                    record = record_result
+                child_context = copy.copy(
+                    self.get_child_context(record=record, context=child_context)
+                )
+                for key, val in (state_partition_context or {}).items():
+                    # Add state context to records if not already present
+                    if key not in record:
+                        record[key] = val
+
+                # Sync children, except when primary mapper filters out the record
+                if self.stream_maps[0].get_filter_result(record):
+                    self._sync_children(child_context)
+                self._check_max_record_limit(record_count)
+                if selected:
+                    self._write_record_message(record)
+                    try:
+                        self._increment_stream_state(record, context=current_context)
+                    except InvalidStreamSortException as ex:
+                        log_sort_error(
+                            log_fn=self.logger.error,
+                            ex=ex,
+                            record_count=record_count + 1,
+                            partition_record_count=partition_record_count + 1,
+                            current_context=current_context,
+                            state_partition_context=state_partition_context,
+                            stream_name=self.name,
+                        )
+                        raise ex
+
+                record_count += 1
+                partition_record_count += 1
+            if current_context == state_partition_context:
+                # Finalize per-partition state only if 1:1 with context
+                self.finalize_state_progress_markers(state)
+        if not context:
+            # Finalize total stream only if we have the full full context.
+            # Otherwise will be finalized by tap at end of sync.
+            self.finalize_state_progress_markers(self.stream_state)
+        self._write_record_count_log(record_count=record_count, context=context)
+
+    schema_writed = False
+
+    def sync_custom(self, context: Optional[dict] = None) -> None:
+        msg = f"Beginning {self.replication_method.lower()} sync of '{self.name}'"
+        if context:
+            msg += f" with context: {context}"
+        self.logger.info(f"{msg}...")
+        # Use a replication signpost, if available
+        signpost = self.get_replication_key_signpost(context)
+        if signpost:
+            self._write_replication_key_signpost(context, signpost)
+        # Send a SCHEMA message to the downstream target:
+        if not self.schema_writed:
+            self._write_schema_message()
+            self.schema_writed = True
+        # Sync the records themselves:
+        self._sync_records(context)
+
 
 class ContactEventsStream(hubspotV3Stream):
     """ContactEvents Stream"""
