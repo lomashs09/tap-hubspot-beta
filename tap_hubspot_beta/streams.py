@@ -1018,3 +1018,50 @@ class MarketingEmailsStream(hubspotV1Stream):
         th.Property("vidsExcluded", th.CustomType({"type": ["array", "string"]})),
         th.Property("vidsIncluded", th.CustomType({"type": ["array", "string"]})), 
     ).to_dict()
+
+class PostalMailStream(ObjectSearchV3):
+    """Owners Stream"""
+
+    name = "postal_mail"
+    path = "crm/v3/objects/postal_mail/search"
+    primary_keys = ["id"]
+    replication_key_filter = "hs_lastmodifieddate"
+    properties_url = "properties/v1/postal_mail/properties"
+
+    schema = th.PropertiesList(
+        th.Property("id", th.StringType),
+        th.Property("hs_timestamp", th.DateTimeType),
+        th.Property("hs_postal_mail_body", th.StringType),
+        th.Property("hubspot_owner_id", th.StringType),
+        th.Property("hs_attachment_ids", th.StringType),
+        th.Property("createdAt", th.DateTimeType),
+        th.Property("hs_createdate", th.DateTimeType),
+        th.Property("hs_lastmodifieddate", th.DateTimeType),
+        th.Property("hs_object_id", th.StringType),
+        th.Property("updatedAt", th.DateTimeType),
+        th.Property("archived", th.BooleanType),
+        th.Property("associations", th.CustomType({"type": ["object", "array"]})),
+    ).to_dict()
+class CommunicationsStream(ObjectSearchV3):
+    """Owners Stream"""
+
+    name = "communications"
+    path = "crm/v3/objects/communications/search"
+    primary_keys = ["id"]
+    replication_key_filter = "hs_lastmodifieddate"
+    properties_url = "properties/v1/communications/properties"
+
+    schema = th.PropertiesList(
+        th.Property("id", th.StringType),
+        th.Property("hs_communication_channel_type", th.StringType),
+        th.Property("hs_communication_logged_from", th.StringType),
+        th.Property("hs_communication_body", th.StringType),
+        th.Property("hs_object_id", th.StringType),
+        th.Property("hs_timestamp", th.DateTimeType),
+        th.Property("hs_createdate", th.DateTimeType),
+        th.Property("hs_lastmodifieddate", th.DateTimeType),
+        th.Property("createdAt", th.DateTimeType),
+        th.Property("updatedAt", th.DateTimeType),
+        th.Property("archived", th.BooleanType),
+        th.Property("associations", th.CustomType({"type": ["object", "array"]})),
+    ).to_dict()
