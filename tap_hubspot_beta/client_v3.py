@@ -29,7 +29,8 @@ class hubspotV3SearchStream(hubspotStream):
 
     def get_starting_time(self, context):
         start_date = self.get_starting_timestamp(context)
-        return int(start_date.timestamp() * 1000)
+        if start_date:
+            return int(start_date.timestamp() * 1000)
 
     def get_next_page_token(
         self, response: requests.Response, previous_token: Optional[Any]
