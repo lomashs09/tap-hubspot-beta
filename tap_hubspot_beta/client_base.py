@@ -28,6 +28,27 @@ class hubspotStream(RESTStream):
     properties_url = None
     page_size = 100
 
+    stream_metadata = {}
+    fields_metadata = {}
+    object_type = None
+    fields_metadata = {}
+
+    def load_fields_metadata(self):
+        if not self.properties_url:
+            self.logger.info(f"Skipping fields_meta for {self.name} stream, because there is no properties_url set")
+            return
+
+        req = requests.get(
+            f"{self.url_base}{self.properties_url}",
+            headers = self.authenticator.auth_headers or {},
+        )
+
+        if req.status_code != 200:
+            self.logger.info(f"Skipping fields_meta for {self.name} stream")
+            return
+
+        self.fields_metadata = {v["name"]: v for v in req.json()}
+
     def _request(
         self, prepared_request: requests.PreparedRequest, context: Optional[dict]
     ) -> requests.Response:

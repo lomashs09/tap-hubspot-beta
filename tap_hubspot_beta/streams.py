@@ -60,6 +60,7 @@ class EngagementStream(hubspotV1Stream):
     primary_keys = ["id"]
     replication_key = None
     page_size = 250
+    properties_url = "properties/v2/engagements/properties"
 
     schema = th.PropertiesList(
         th.Property("id", th.IntegerType),
@@ -539,6 +540,7 @@ class FormSubmissionsStream(hubspotV1Stream):
     # NOTE: There is no primary_key for this stream
     replication_key = "submittedAt"
     path = "/form-integrations/v1/submissions/forms/{form_id}"
+    properties_url = "properties/v2/form_submissions/properties"
 
     schema = th.PropertiesList(
         th.Property("form_id", th.StringType),
@@ -765,6 +767,7 @@ class CompaniesStream(ObjectSearchV3):
     """Companies Stream"""
 
     name = "companies"
+    object_type = "companies"
     path = "crm/v3/objects/companies/search"
     replication_key_filter = "hs_lastmodifieddate"
     properties_url = "properties/v1/companies/properties"
@@ -1100,7 +1103,7 @@ class PostalMailStream(ObjectSearchV3):
     path = "crm/v3/objects/postal_mail/search"
     primary_keys = ["id"]
     replication_key_filter = "hs_lastmodifieddate"
-    properties_url = "properties/v1/postal_mail/properties"
+    properties_url = "properties/v2/postal_mail/properties"
 
     schema = th.PropertiesList(
         th.Property("id", th.StringType),
@@ -1123,7 +1126,7 @@ class CommunicationsStream(ObjectSearchV3):
     path = "crm/v3/objects/communications/search"
     primary_keys = ["id"]
     replication_key_filter = "hs_lastmodifieddate"
-    properties_url = "properties/v1/communications/properties"
+    properties_url = "properties/v2/communications/properties"
 
     schema = th.PropertiesList(
         th.Property("id", th.StringType),
