@@ -5,6 +5,7 @@ import copy
 
 from singer_sdk.exceptions import InvalidStreamSortException
 from singer_sdk.helpers.jsonpath import extract_jsonpath
+from singer_sdk.exceptions import FatalAPIError
 
 import requests
 from backports.cached_property import cached_property
@@ -649,7 +650,11 @@ class ContactListsStream(hubspotStreamSchema):
         # Init request session
         self._requests_session = requests.Session()
         # Get the data from Hubspot
-        records = self.request_records(dict())
+        try:
+            records = self.request_records(dict())
+        except FatalAPIError:
+            self.logger.warning("Failed to run discover on dynamic stream ContactListsStream properties.")
+            records = []
 
         properties = []
         property_names = set()
@@ -907,11 +912,17 @@ class ListMembershipV3Stream(hubspotV3Stream):
     path = "crm/v3/lists/{list_id}/memberships"
     records_jsonpath = "$[*]"
     parent_stream_type = ListSearchV3Stream
+    primary_keys = ["list_id"]
 
     schema = th.PropertiesList(
         th.Property("results", th.CustomType({"type": ["array", "string"]})),
+        th.Property("list_id", th.IntegerType),
     ).to_dict()
 
+    def post_process(self, row, context):
+        row = super().post_process(row, context)
+        row["list_id"] = context["list_id"]
+        return row
 
 
 class AssociationDealsStream(hubspotV4Stream):
