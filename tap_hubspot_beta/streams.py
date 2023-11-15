@@ -6,6 +6,7 @@ import copy
 from singer_sdk.exceptions import InvalidStreamSortException
 from singer_sdk.helpers.jsonpath import extract_jsonpath
 from singer_sdk.exceptions import FatalAPIError
+import singer
 
 import requests
 from backports.cached_property import cached_property
@@ -855,6 +856,48 @@ class LineItemsStream(ObjectSearchV3):
     path = "crm/v3/objects/line_items/search"
     replication_key_filter = "hs_lastmodifieddate"
     properties_url = "properties/v2/line_items/properties"
+
+
+class ArchivedLineItemsStream(hubspotV3Stream):
+    """Line Items Stream"""
+
+    name = "lineitems_archived"
+    path = "crm/v3/objects/line_items?archived=true"
+    properties_url = "properties/v2/line_items/properties"
+    primary_keys = ["id"]
+
+    base_properties = [
+        th.Property("id", th.StringType),
+        th.Property("archived", th.BooleanType),
+        th.Property("archivedAt", th.DateTimeType),
+        th.Property("createdAt", th.DateTimeType),
+        th.Property("updatedAt", th.DateTimeType)
+    ]
+
+    @property
+    def selected(self) -> bool:
+        """Check if stream is selected.
+
+        Returns:
+            True if the stream is selected.
+        """
+        try:
+            # Make this stream auto-select if lineitems is selected
+            self._tap.catalog["lineitems_archived"] = self._tap.catalog["lineitems"]
+            return self.mask.get((), False) or self._tap.catalog["lineitems"].metadata.get(()).selected
+        except:
+            return self.mask.get((), False)
+
+    def _write_record_message(self, record: dict) -> None:
+        """Write out a RECORD message.
+
+        Args:
+            record: A single stream record.
+        """
+        for record_message in self._generate_record_messages(record):
+            # force this to think it's the lineitems stream
+            record_message.stream = "lineitems"
+            singer.write_message(record_message)
 
 
 class ListSearchV3Stream(hubspotV3SingleSearchStream):
