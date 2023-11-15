@@ -18,6 +18,7 @@ from tap_hubspot_beta.client_v1 import hubspotV1Stream
 from tap_hubspot_beta.client_v3 import hubspotV3SearchStream, hubspotV3Stream, hubspotV3SingleSearchStream
 from tap_hubspot_beta.client_v4 import hubspotV4Stream
 import time
+import pytz
 from singer_sdk.helpers._state import log_sort_error
 
 class AccountStream(hubspotV1Stream):
@@ -865,6 +866,7 @@ class ArchivedLineItemsStream(hubspotV3Stream):
     """Line Items Stream"""
 
     name = "lineitems_archived"
+    replication_key = "archivedAt"
     path = "crm/v3/objects/line_items?archived=true"
     properties_url = "properties/v2/line_items/properties"
     primary_keys = ["id"]
@@ -901,6 +903,19 @@ class ArchivedLineItemsStream(hubspotV3Stream):
             # force this to think it's the lineitems stream
             record_message.stream = "lineitems"
             singer.write_message(record_message)
+
+    def post_process(self, row, context):
+        row = super().post_process(row, context)
+
+        rep_key = self.get_starting_timestamp(context).replace(tzinfo=pytz.utc)
+        archived_at = datetime.strptime(
+            row['archivedAt'], "%Y-%m-%dT%H:%M:%S.%fZ"
+        ).replace(tzinfo=pytz.utc)
+
+        if archived_at > rep_key:
+            return row
+
+        return None
 
 
 class ListSearchV3Stream(hubspotV3SingleSearchStream):
