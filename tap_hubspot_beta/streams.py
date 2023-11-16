@@ -886,6 +886,10 @@ class ArchivedLineItemsStream(hubspotV3Stream):
         Returns:
             True if the stream is selected.
         """
+        # It has to be in the catalog or it will cause issues
+        if not self._tap.catalog.get("lineitems_archived"):
+            return False
+
         try:
             # Make this stream auto-select if lineitems is selected
             self._tap.catalog["lineitems_archived"] = self._tap.catalog["lineitems"]
