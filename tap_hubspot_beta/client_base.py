@@ -273,7 +273,11 @@ class hubspotStream(RESTStream):
         finalize_state_progress_markers(state)
 
     def backoff_wait_generator(self):
-        return backoff.expo(base=3, factor=3)
+        return backoff.constant(interval=15)
+
+    @property
+    def backoff_max_tries(self):
+        return 10
 
     def request_decorator(self, func):
         """Instantiate a decorator for handling request failures."""
