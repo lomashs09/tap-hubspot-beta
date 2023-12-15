@@ -43,10 +43,7 @@ from tap_hubspot_beta.streams import (
     QuotesStream,
     AssociationQuotesDealsStream,
     ListMembershipV3Stream,
-    ListSearchV3Stream,
-    ArchivedCompaniesStream,
-    ArchivedDealsStream,
-    DealsAssociationParent
+    ListSearchV3Stream
 )
 
 STREAM_TYPES = [
@@ -87,10 +84,7 @@ STREAM_TYPES = [
     QuotesStream,
     AssociationQuotesDealsStream,
     ListMembershipV3Stream,
-    ListSearchV3Stream,
-    ArchivedCompaniesStream,
-    ArchivedDealsStream,
-    DealsAssociationParent
+    ListSearchV3Stream
 ]
 
 
@@ -132,15 +126,14 @@ class Taphubspot(Tap):
             The tap's catalog as a dict
         """
         catalog = super().catalog_dict
-        if self.config.get("catalog_metadata", False):
-            streams = self.streams
-            for stream in catalog["streams"]:
-                stream_class = streams[stream["tap_stream_id"]]
-                stream["stream_meta"] = {}
-                if hasattr(stream_class, "load_fields_metadata"):
-                    stream_class.load_fields_metadata()
-                    for field in stream["schema"]["properties"]:
-                        stream["schema"]["properties"][field]["field_meta"] = stream_class.fields_metadata.get(field, {})
+        streams = self.streams
+        for stream in catalog["streams"]:
+            stream_class = streams[stream["tap_stream_id"]]
+            stream["stream_meta"] = {}
+            if hasattr(stream_class, "load_fields_metadata"):
+                stream_class.load_fields_metadata()
+                for field in stream["schema"]["properties"]:
+                    stream["schema"]["properties"][field]["field_meta"] = stream_class.fields_metadata.get(field, {})
         return catalog
 
 
