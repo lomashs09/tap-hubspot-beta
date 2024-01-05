@@ -21,6 +21,7 @@ import time
 import pytz
 from singer_sdk.helpers._state import log_sort_error
 from pendulum import parse
+from urllib.parse import urlencode
 
 class AccountStream(hubspotV1Stream):
     """Account Stream"""
@@ -801,7 +802,6 @@ class ArchivedCompaniesStream(hubspotV3Stream):
     @property
     def selected(self) -> bool:
         """Check if stream is selected.
-
         Returns:
             True if the stream is selected.
         """
@@ -818,7 +818,6 @@ class ArchivedCompaniesStream(hubspotV3Stream):
 
     def _write_record_message(self, record: dict) -> None:
         """Write out a RECORD message.
-
         Args:
             record: A single stream record.
         """
@@ -833,6 +832,12 @@ class ArchivedCompaniesStream(hubspotV3Stream):
         new_metadata[("properties", "archivedAt")].selected = True
         new_metadata[("properties", "archivedAt")].selected_by_default = True
         return new_metadata
+
+    def get_url_params(self, context, next_page_token):
+        params = super().get_url_params(context, next_page_token)
+        if len(urlencode(params)) > 3000:
+            params["properties"] = "id,createdAt,updatedAt,archived,archivedAt"
+        return params
 
     def post_process(self, row, context):
         row = super().post_process(row, context)
@@ -889,8 +894,25 @@ class ArchivedDealsStream(hubspotV3Stream):
         th.Property("archived", th.BooleanType),
         th.Property("archivedAt", th.DateTimeType),
         th.Property("createdAt", th.DateTimeType),
-        th.Property("updatedAt", th.DateTimeType)
+        th.Property("updatedAt", th.DateTimeType),
+        th.Property("dealname", th.StringType),
+        th.Property("hubspot_owner_id", th.StringType),
+        th.Property("amount", th.StringType),
+        th.Property("hs_mrr", th.StringType),
+        th.Property("dealstage", th.StringType),
+        th.Property("pipeline", th.StringType),
+        th.Property("dealtype", th.StringType),
+        th.Property("hs_createdate", th.DateTimeType),
+        th.Property("createdate", th.DateTimeType),
+        th.Property("hs_lastmodifieddate", th.DateTimeType),
+        th.Property("closedate", th.DateTimeType)
     ]
+
+    def get_url_params(self, context, next_page_token):
+        params = super().get_url_params(context, next_page_token)
+        if len(urlencode(params)) > 3000:
+            params["properties"] = "id,createdAt,updatedAt,archivedAt,dealname,hubspot_owner_id,amount,hs_mrr,dealstage,pipeline,dealtype,hs_createdate,createdate,hs_lastmodifieddate,closedate,archived"
+        return params
 
     @property
     def metadata(self):
@@ -902,7 +924,6 @@ class ArchivedDealsStream(hubspotV3Stream):
     @property
     def selected(self) -> bool:
         """Check if stream is selected.
-
         Returns:
             True if the stream is selected.
         """
@@ -919,7 +940,6 @@ class ArchivedDealsStream(hubspotV3Stream):
 
     def _write_record_message(self, record: dict) -> None:
         """Write out a RECORD message.
-
         Args:
             record: A single stream record.
         """
@@ -1055,6 +1075,12 @@ class ArchivedLineItemsStream(hubspotV3Stream):
             # force this to think it's the lineitems stream
             record_message.stream = "lineitems"
             singer.write_message(record_message)
+
+    def get_url_params(self, context, next_page_token):
+        params = super().get_url_params(context, next_page_token)
+        if len(urlencode(params)) > 3000:
+            params["properties"] = "id,createdAt,updatedAt,archived,archivedAt"
+        return params
 
     def post_process(self, row, context):
         row = super().post_process(row, context)
