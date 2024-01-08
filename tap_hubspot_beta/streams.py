@@ -1040,6 +1040,13 @@ class ArchivedLineItemsStream(hubspotV3Stream):
     ]
 
     @property
+    def metadata(self):
+        new_metadata = super().metadata
+        new_metadata[("properties", "archivedAt")].selected = True
+        new_metadata[("properties", "archivedAt")].selected_by_default = True
+        return new_metadata
+
+    @property
     def selected(self) -> bool:
         """Check if stream is selected.
 
