@@ -17,6 +17,7 @@ from tap_hubspot_beta.client_base import hubspotStreamSchema
 from tap_hubspot_beta.client_v1 import hubspotV1Stream
 from tap_hubspot_beta.client_v3 import hubspotV3SearchStream, hubspotV3Stream, hubspotV3SingleSearchStream
 from tap_hubspot_beta.client_v4 import hubspotV4Stream
+from tap_hubspot_beta.client_v2 import hubspotV2Stream
 import time
 import pytz
 from singer_sdk.helpers._state import log_sort_error
@@ -782,22 +783,24 @@ class CompaniesStream(ObjectSearchV3):
     properties_url = "properties/v1/companies/properties"
 
 
-class FullsyncCompaniesStream(hubspotStreamSchema):
+class FullsyncCompaniesStream(hubspotV2Stream):
     """Companies Fullsync Stream"""
 
     name = "fullsync_companies"
     object_type = "companies"
     path = "companies/v2/companies/paged"
-    replication_key_filter = None
-    records_jsonpath = "$.companies[*].properties"
-    properties_url = "properties/v1/companies/properties"
+    replication_key = "hs_lastmodifieddate"
+    records_jsonpath = "$.companies[*]"
+    properties_url = "properties/v2/companies/properties"
     limit = 250
-    @property
-    def properties(self):
-        if not self.fields_metadata: 
-            self.load_fields_metadata()
-        properties = list(self.fields_metadata.keys())
-        return properties
+
+    base_properties = [
+        th.Property("id", th.StringType),
+        th.Property("archived", th.BooleanType),
+        th.Property("archivedAt", th.DateTimeType),
+        th.Property("createdAt", th.DateTimeType),
+        th.Property("updatedAt", th.DateTimeType)
+    ]
     
 
 class ArchivedCompaniesStream(hubspotV3Stream):
