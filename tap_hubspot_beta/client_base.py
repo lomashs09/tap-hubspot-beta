@@ -323,7 +323,12 @@ class hubspotStreamSchema(hubspotStream):
     ) -> Dict[str, Any]:
         """Return a dictionary of values to be used in URL parameterization."""
         params: dict = {}
-        params["count"] = self.page_size
+        if hasattr(self, "limit"):
+            params["limit"] = self.limit
+        else:
+            params["count"] = self.page_size
+        if hasattr(self, "properties"):
+            params["properties"] = self.properties
         if next_page_token:
             params.update(next_page_token)
         return params

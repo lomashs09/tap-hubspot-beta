@@ -782,6 +782,24 @@ class CompaniesStream(ObjectSearchV3):
     properties_url = "properties/v1/companies/properties"
 
 
+class FullsyncCompaniesStream(hubspotStreamSchema):
+    """Companies Fullsync Stream"""
+
+    name = "fullsync_companies"
+    object_type = "companies"
+    path = "companies/v2/companies/paged"
+    replication_key_filter = None
+    records_jsonpath = "$.companies[*].properties"
+    properties_url = "properties/v1/companies/properties"
+    limit = 250
+    @property
+    def properties(self):
+        if not self.fields_metadata: 
+            self.load_fields_metadata()
+        properties = list(self.fields_metadata.keys())
+        return properties
+    
+
 class ArchivedCompaniesStream(hubspotV3Stream):
     """Archived Companies Stream"""
 
