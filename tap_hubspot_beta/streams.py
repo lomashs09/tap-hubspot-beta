@@ -801,7 +801,41 @@ class FullsyncCompaniesStream(hubspotV2Stream):
         th.Property("createdAt", th.DateTimeType),
         th.Property("updatedAt", th.DateTimeType)
     ]
-    
+
+    # @property
+    # def selected(self) -> bool:
+    #     """Check if stream is selected.
+    #     Returns:
+    #         True if the stream is selected.
+    #     """
+    #     # It has to be in the catalog or it will cause issues
+    #     if not self._tap.catalog.get("fullsync_companies"):
+    #         return False
+
+    #     try:
+    #         # Make this stream auto-select if companies is selected
+    #         self._tap.catalog["fullsync_companies"] = self._tap.catalog["companies"]
+    #         return self.mask.get((), False) or self._tap.catalog["companies"].metadata.get(()).selected
+    #     except:
+    #         return self.mask.get((), False)
+
+    def _write_record_message(self, record: dict) -> None:
+        """Write out a RECORD message.
+        Args:
+            record: A single stream record.
+        """
+        for record_message in self._generate_record_messages(record):
+            # force this to think it's the companies stream
+            record_message.stream = "companies"
+            singer.write_message(record_message)
+
+    @property
+    def metadata(self):
+        new_metadata = super().metadata
+        new_metadata[("properties", "hs_lastmodifieddate")].selected = True
+        new_metadata[("properties", "hs_lastmodifieddate")].selected_by_default = True
+        return new_metadata
+
 
 class ArchivedCompaniesStream(hubspotV3Stream):
     """Archived Companies Stream"""
