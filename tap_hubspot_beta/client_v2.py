@@ -32,4 +32,11 @@ class hubspotV2Stream(hubspotStreamSchema):
                 row[name] = value.get("value")
             row["id"] = str(row["companyId"])
             del row["properties"]
+        for field in self.datetime_fields:
+            if row.get(field) is not None:
+                if row.get(field) in [0, ""]:
+                    row[field] = None
+                else:
+                    dt_field = datetime.fromtimestamp(int(row[field]) / 1000)
+                    row[field] = dt_field.isoformat()
         return row
