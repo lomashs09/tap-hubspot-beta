@@ -39,4 +39,7 @@ class hubspotV2Stream(hubspotStreamSchema):
                 else:
                     dt_field = datetime.fromtimestamp(int(row[field]) / 1000)
                     row[field] = dt_field.isoformat()
+        row["updatedAt"] = row["hs_lastmodifieddate"]
+        row["createdAt"] = row["createdate"]
+        row["archived"] = False
         return row
