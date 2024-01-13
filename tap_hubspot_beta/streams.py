@@ -782,6 +782,12 @@ class CompaniesStream(ObjectSearchV3):
     replication_key_filter = "hs_lastmodifieddate"
     properties_url = "properties/v1/companies/properties"
 
+    def get_next_page_token(
+        self, response: requests.Response, previous_token: Optional[Any]
+    ) -> Optional[Any]:
+        # TODO:REMOVE THIS!!
+        return None
+
 
 class FullsyncCompaniesStream(hubspotV2Stream):
     """Companies Fullsync Stream"""
@@ -802,22 +808,22 @@ class FullsyncCompaniesStream(hubspotV2Stream):
         th.Property("updatedAt", th.DateTimeType)
     ]
 
-    # @property
-    # def selected(self) -> bool:
-    #     """Check if stream is selected.
-    #     Returns:
-    #         True if the stream is selected.
-    #     """
-    #     # It has to be in the catalog or it will cause issues
-    #     if not self._tap.catalog.get("fullsync_companies"):
-    #         return False
+    @property
+    def selected(self) -> bool:
+        """Check if stream is selected.
+        Returns:
+            True if the stream is selected.
+        """
+        # It has to be in the catalog or it will cause issues
+        if not self._tap.catalog.get("fullsync_companies"):
+            return False
 
-    #     try:
-    #         # Make this stream auto-select if companies is selected
-    #         self._tap.catalog["fullsync_companies"] = self._tap.catalog["companies"]
-    #         return self.mask.get((), False) or self._tap.catalog["companies"].metadata.get(()).selected
-    #     except:
-    #         return self.mask.get((), False)
+        try:
+            # Make this stream auto-select if companies is selected
+            self._tap.catalog["fullsync_companies"] = self._tap.catalog["companies"]
+            return self.mask.get((), False) or self._tap.catalog["companies"].metadata.get(()).selected
+        except:
+            return self.mask.get((), False)
 
     def _write_record_message(self, record: dict) -> None:
         """Write out a RECORD message.
