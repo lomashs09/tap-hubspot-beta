@@ -782,12 +782,6 @@ class CompaniesStream(ObjectSearchV3):
     replication_key_filter = "hs_lastmodifieddate"
     properties_url = "properties/v1/companies/properties"
 
-    def get_next_page_token(
-        self, response: requests.Response, previous_token: Optional[Any]
-    ) -> Optional[Any]:
-        # TODO:REMOVE THIS!!
-        return None
-
 
 class FullsyncCompaniesStream(hubspotV2Stream):
     """Companies Fullsync Stream"""
@@ -795,7 +789,7 @@ class FullsyncCompaniesStream(hubspotV2Stream):
     name = "fullsync_companies"
     object_type = "companies"
     path = "companies/v2/companies/paged"
-    replication_key = "hs_lastmodifieddate"
+    replication_key = "updatedAt"
     records_jsonpath = "$.companies[*]"
     properties_url = "properties/v2/companies/properties"
     limit = 250
