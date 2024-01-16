@@ -93,12 +93,12 @@ class hubspotStream(RESTStream):
             
             # only use companies stream for incremental syncs
             if self.name == "companies":
-                fullsync_companies_state = self.tap_state.get("bookmarks").get("fullsync_companies")
+                fullsync_companies_state = self.tap_state.get("bookmarks", {}).get("fullsync_companies", {})
                 if not fullsync_companies_state.get("replication_key") and self.is_first_sync():
                     finished = True
                     yield from []
                     break
-                elif fullsync_companies_state.get("replication_key"):
+                elif fullsync_companies_state.get("replication_key") and self.is_first_sync():
                     self.stream_state.update(fullsync_companies_state)
                     self.stream_state["starting_replication_value"] = self.stream_state["replication_key_value"]
 
