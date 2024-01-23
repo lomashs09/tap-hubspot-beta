@@ -120,7 +120,7 @@ class EngagementStream(hubspotV1Stream):
         th.Property("html", th.StringType),
         th.Property("trackerKey", th.StringType),
         th.Property("messageId", th.StringType),
-        th.Property("threadId", th.CustomType({"type": ["integer", "string"]})),
+        th.Property("threadId", th.IntegerType),
         th.Property("emailSendEventId", th.CustomType({"type": ["object", "string"]})),
         th.Property("loggedFrom", th.StringType),
         th.Property("validationSkipped", th.CustomType({"type": ["array", "string"]})),
@@ -1455,3 +1455,24 @@ class AssociationQuotesDealsStream(AssociationDealsStream):
 
     name = "associations_quotes_deals"
     path = "crm/v4/associations/deals/quotes/batch/read"
+
+
+class CurrenciesStream(hubspotV3SearchStream):
+    """Owners Stream"""
+
+    rest_method = "GET"
+    name = "currencies_exchange_rate"
+    path = "settings/v3/currencies/exchange-rates"
+    primary_keys = ["id"]
+    replication_key_filter = "updatedAt"
+
+    schema = th.PropertiesList(
+        th.Property("createdAt", th.DateTimeType),
+        th.Property("toCurrencyCode", th.StringType),
+        th.Property("visibleInUI", th.BooleanType),
+        th.Property("effectiveAt", th.DateTimeType),
+        th.Property("id", th.StringType),
+        th.Property("conversionRate", th.NumberType),
+        th.Property("fromCurrencyCode", th.StringType),
+        th.Property("updatedAt", th.DateTimeType),
+    ).to_dict()
