@@ -7,6 +7,7 @@ from singer_sdk.exceptions import InvalidStreamSortException
 from singer_sdk.helpers.jsonpath import extract_jsonpath
 from singer_sdk.exceptions import FatalAPIError
 import singer
+import logging
 
 import requests
 from backports.cached_property import cached_property
@@ -119,7 +120,7 @@ class EngagementStream(hubspotV1Stream):
         th.Property("html", th.StringType),
         th.Property("trackerKey", th.StringType),
         th.Property("messageId", th.StringType),
-        th.Property("threadId", th.CustomType({"type": ["integer", "string"]})),
+        th.Property("threadId", th.IntegerType),
         th.Property("emailSendEventId", th.CustomType({"type": ["object", "string"]})),
         th.Property("loggedFrom", th.StringType),
         th.Property("validationSkipped", th.CustomType({"type": ["array", "string"]})),
@@ -646,6 +647,16 @@ class ContactListsStream(hubspotStreamSchema):
     replication_key = None
     path = "/contacts/v1/lists"
 
+    def _request_records(self, params: dict) -> Iterable[dict]:
+        """Request and return a page of records from the API."""
+        try:
+            records = list(super().request_records(params))
+        except FatalAPIError:
+            logging.info("Couldn't get schema for path: /contacts/v1/lists")
+            return []
+
+        return records
+
     @cached_property
     def schema(self) -> dict:
         """Dynamically detect the json schema for the stream.
@@ -655,7 +666,7 @@ class ContactListsStream(hubspotStreamSchema):
         self._requests_session = requests.Session()
         # Get the data from Hubspot
         try:
-            records = self.request_records(dict())
+            records = self._request_records(dict())
         except FatalAPIError:
             self.logger.warning("Failed to run discover on dynamic stream ContactListsStream properties.")
             records = []
@@ -875,7 +886,7 @@ class DealsAssociationParent(DealsStream):
     replication_key = None
     primary_keys = ["id"]
     schema = th.PropertiesList(
-        th.Property("id", th.IntegerType),
+        th.Property("id", th.StringType),
     ).to_dict()
 
 
@@ -1402,14 +1413,12 @@ class AssociationQuotesDealsStream(AssociationDealsStream):
     path = "crm/v4/associations/deals/quotes/batch/read"
 
 
-class CurrenciesStream(hubspotV3SearchStream):
-    """Owners Stream"""
+class CurrenciesStream(hubspotV3Stream):
+    """Currencies Stream"""
 
-    rest_method = "GET"
     name = "currencies_exchange_rate"
     path = "settings/v3/currencies/exchange-rates"
     primary_keys = ["id"]
-    replication_key_filter = "updatedAt"
 
     schema = th.PropertiesList(
         th.Property("createdAt", th.DateTimeType),
