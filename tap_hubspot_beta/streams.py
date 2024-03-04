@@ -761,6 +761,7 @@ class ObjectSearchV3(hubspotV3SearchStream):
         th.Property("createdAt", th.DateTimeType),
         th.Property("updatedAt", th.DateTimeType),
         th.Property("archived", th.BooleanType),
+        th.Property("_hg_archived", th.BooleanType),
         th.Property("archivedAt", th.DateTimeType),
     ]
 
@@ -794,6 +795,22 @@ class ContactsV3Stream(ObjectSearchV3):
 
     def get_child_context(self, record: dict, context) -> dict:
         return {"id": record["id"]}
+
+class ArchivedStream(hubspotV3Stream):
+
+    def post_process(self, row, context):
+        row = super().post_process(row, context)
+
+        # add archived value to _hg_archived
+        row["_hg_archived"] = True
+        rep_key = self.get_starting_timestamp(context).replace(tzinfo=pytz.utc)
+        archived_at = parse(row['archivedAt']).replace(tzinfo=pytz.utc)
+
+        if archived_at > rep_key:
+            return row
+
+        return None
+
 
 
 class CompaniesStream(ObjectSearchV3):
@@ -860,7 +877,7 @@ class FullsyncCompaniesStream(hubspotV2Stream):
         return new_metadata
 
 
-class ArchivedCompaniesStream(hubspotV3Stream):
+class ArchivedCompaniesStream(ArchivedStream):
     """Archived Companies Stream"""
 
     name = "companies_archived"
@@ -872,6 +889,7 @@ class ArchivedCompaniesStream(hubspotV3Stream):
     base_properties = [
         th.Property("id", th.StringType),
         th.Property("archived", th.BooleanType),
+        th.Property("_hg_archived", th.BooleanType),
         th.Property("archivedAt", th.DateTimeType),
         th.Property("createdAt", th.DateTimeType),
         th.Property("updatedAt", th.DateTimeType)
@@ -917,17 +935,6 @@ class ArchivedCompaniesStream(hubspotV3Stream):
             params["properties"] = "id,createdAt,updatedAt,archived,archivedAt"
         return params
 
-    def post_process(self, row, context):
-        row = super().post_process(row, context)
-
-        rep_key = self.get_starting_timestamp(context).replace(tzinfo=pytz.utc)
-        archived_at = parse(row['archivedAt']).replace(tzinfo=pytz.utc)
-
-        if archived_at > rep_key:
-            return row
-
-        return None
-
 
 class TicketsStream(ObjectSearchV3):
     """Companies Stream"""
@@ -957,7 +964,7 @@ class DealsAssociationParent(DealsStream):
     ).to_dict()
 
 
-class ArchivedDealsStream(hubspotV3Stream):
+class ArchivedDealsStream(ArchivedStream):
     """Archived Deals Stream"""
 
     name = "deals_archived"
@@ -969,6 +976,7 @@ class ArchivedDealsStream(hubspotV3Stream):
     base_properties = [
         th.Property("id", th.StringType),
         th.Property("archived", th.BooleanType),
+        th.Property("_hg_archived", th.BooleanType),
         th.Property("archivedAt", th.DateTimeType),
         th.Property("createdAt", th.DateTimeType),
         th.Property("updatedAt", th.DateTimeType),
@@ -1024,17 +1032,6 @@ class ArchivedDealsStream(hubspotV3Stream):
             # force this to think it's the deals stream
             record_message.stream = "deals"
             singer.write_message(record_message)
-
-    def post_process(self, row, context):
-        row = super().post_process(row, context)
-
-        rep_key = self.get_starting_timestamp(context).replace(tzinfo=pytz.utc)
-        archived_at = parse(row['archivedAt']).replace(tzinfo=pytz.utc)
-
-        if archived_at > rep_key:
-            return row
-
-        return None
 
 
 class ProductsStream(ObjectSearchV3):
@@ -1115,7 +1112,7 @@ class LineItemsStream(ObjectSearchV3):
     properties_url = "properties/v2/line_items/properties"
 
 
-class ArchivedLineItemsStream(hubspotV3Stream):
+class ArchivedLineItemsStream(ArchivedStream):
     """Line Items Stream"""
 
     name = "lineitems_archived"
@@ -1127,6 +1124,7 @@ class ArchivedLineItemsStream(hubspotV3Stream):
     base_properties = [
         th.Property("id", th.StringType),
         th.Property("archived", th.BooleanType),
+        th.Property("_hg_archived", th.BooleanType),
         th.Property("archivedAt", th.DateTimeType),
         th.Property("createdAt", th.DateTimeType),
         th.Property("updatedAt", th.DateTimeType)
@@ -1173,17 +1171,6 @@ class ArchivedLineItemsStream(hubspotV3Stream):
         if len(urlencode(params)) > 3000:
             params["properties"] = "id,createdAt,updatedAt,archived,archivedAt"
         return params
-
-    def post_process(self, row, context):
-        row = super().post_process(row, context)
-
-        rep_key = self.get_starting_timestamp(context).replace(tzinfo=pytz.utc)
-        archived_at = parse(row['archivedAt']).replace(tzinfo=pytz.utc)
-
-        if archived_at > rep_key:
-            return row
-
-        return None
 
 
 class ListSearchV3Stream(hubspotV3SingleSearchStream):
