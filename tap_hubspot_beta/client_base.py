@@ -150,6 +150,7 @@ class hubspotStream(RESTStream):
             #We need logs for 500
             if response.status_code == 500:
                 curl_command = curlify.to_curl(response.request)
+                logging.error(f"Response code: {response.status_code}, info: {response.text}")
                 logging.error(f"CURL command for failed request: {curl_command}")
             raise RetriableAPIError(msg)
 
@@ -159,6 +160,7 @@ class hubspotStream(RESTStream):
                 f"{response.reason} for path: {self.path}"
             )
             curl_command = curlify.to_curl(response.request)
+            logging.error(f"Response code: {response.status_code}, info: {response.text}")
             logging.error(f"CURL command for failed request: {curl_command}")
             raise FatalAPIError(msg)
 
