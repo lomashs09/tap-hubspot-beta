@@ -43,7 +43,8 @@ class hubspotV3SearchStream(hubspotStream):
             start_date = self.stream_state.get("progress_markers", {}).get(
                 "replication_key_value"
             )
-            if self.name in ["deals_association_parent"]:
+            #We don't have a replication value. Need to paginate using lastmodifieddates after page #10000
+            if start_date is None:
                 data = response.json()
                 # extract maximum modified date to overcome 10000 pagination limit
                 hs_lastmodifieddates = [
