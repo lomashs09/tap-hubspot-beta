@@ -167,9 +167,7 @@ class hubspotStream(RESTStream):
     @staticmethod
     def extract_type(field, type_booleancheckbox_as_boolean=False):
         field_type = field.get("type")
-        if field_type == "bool":
-            return th.BooleanType
-        if field.get("fieldType") == "booleancheckbox" and type_booleancheckbox_as_boolean:
+        if field_type == "bool" or field.get("fieldType") == "booleancheckbox":
             return th.BooleanType
         if field_type in ["string", "enumeration", "phone_number", "date", "json", "object_coordinates"]:
             return th.StringType
