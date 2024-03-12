@@ -796,6 +796,21 @@ class ContactsV3Stream(ObjectSearchV3):
     def get_child_context(self, record: dict, context) -> dict:
         return {"id": record["id"]}
 
+
+class ContactsHistoryPropertiesStream(hubspotV3Stream):
+    """Contacts History Properties Stream"""
+
+    name = "contacts_history_properties"
+    path = "crm/v3/objects/contacts/{id}"
+    properties_url = "properties/v1/contacts/properties"
+    additional_prarams = {"propertiesWithHistory": True}
+    parent_stream_type = ContactsV3Stream
+    no_bulk_child = True
+    records_jsonpath = "$[*]"
+    base_properties = [
+        th.Property("propertiesWithHistory", th.CustomType({"type": ["object", "string"]})),
+    ]
+
 class ArchivedStream(hubspotV3Stream):
 
     def post_process(self, row, context):
@@ -810,7 +825,6 @@ class ArchivedStream(hubspotV3Stream):
             return row
 
         return None
-
 
 
 class CompaniesStream(ObjectSearchV3):
@@ -954,6 +968,20 @@ class DealsStream(ObjectSearchV3):
 
     def get_child_context(self, record: dict, context) -> dict:
         return {"id": record["id"]}
+    
+class DealsHistoryPropertiesStream(hubspotV3Stream):
+    """Deals Stream"""
+
+    name = "deals_history_properties"
+    path = "crm/v3/objects/deals/{id}"
+    properties_url = "properties/v1/deals/properties"
+    additional_prarams = {"propertiesWithHistory": True}
+    parent_stream_type = DealsStream
+    no_bulk_child = True
+    records_jsonpath = "$[*]"
+    base_properties = [
+        th.Property("propertiesWithHistory", th.CustomType({"type": ["object", "string"]})),
+    ]
 
 class DealsAssociationParent(DealsStream):
     name = "deals_association_parent"    
