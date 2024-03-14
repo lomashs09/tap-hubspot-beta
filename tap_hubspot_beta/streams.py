@@ -859,7 +859,7 @@ class ArchivedCompaniesStream(hubspotV3Stream):
     def get_url_params(self, context, next_page_token):
         params = super().get_url_params(context, next_page_token)
         if len(urlencode(params)) > 3000:
-            params["properties"] = "id,createdAt,updatedAt,archived,archivedAt"
+            params["properties"] = ",".join(self.selected_properties)
         return params
 
     def post_process(self, row, context):
@@ -934,7 +934,7 @@ class ArchivedDealsStream(hubspotV3Stream):
     def get_url_params(self, context, next_page_token):
         params = super().get_url_params(context, next_page_token)
         if len(urlencode(params)) > 3000:
-            params["properties"] = "id,createdAt,updatedAt,archivedAt,dealname,hubspot_owner_id,amount,hs_mrr,dealstage,pipeline,dealtype,hs_createdate,createdate,hs_lastmodifieddate,closedate,archived"
+            params["properties"] = ",".join(self.selected_properties)
         return params
 
     @property
@@ -1117,7 +1117,7 @@ class ArchivedLineItemsStream(hubspotV3Stream):
     def get_url_params(self, context, next_page_token):
         params = super().get_url_params(context, next_page_token)
         if len(urlencode(params)) > 3000:
-            params["properties"] = "id,createdAt,updatedAt,archived,archivedAt"
+            params["properties"] = ",".join(self.selected_properties)
         return params
 
     def post_process(self, row, context):
