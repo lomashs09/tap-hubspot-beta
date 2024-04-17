@@ -1,6 +1,7 @@
 """REST client handling, including hubspotStream base class."""
 import copy
 import logging
+import curlify
 
 import requests
 import backoff
@@ -159,23 +160,29 @@ class hubspotStream(RESTStream):
 
     def validate_response(self, response: requests.Response) -> None:
         """Validate HTTP response."""
-        if 500 <= response.status_code < 600 or response.status_code in [401, 104]:
+        if 500 <= response.status_code < 600 or response.status_code in [400, 401, 104]:
             msg = (
                 f"{response.status_code} Server Error: "
                 f"{response.reason} for path: {self.path}"
             )
-            raise RetriableAPIError(msg)
+            curl_command = curlify.to_curl(response.request)
+            logging.error(f"Response code: {response.status_code}, info: {response.text}")
+            logging.error(f"CURL command for failed request: {curl_command}")
+            raise RetriableAPIError(f"Msg {msg}, response {response.text}")
 
         if 429 == response.status_code:
             self.log_rate_limit(response)
             raise RetriableAPIError(f"429 Too Many Requests, response {response.text}")
 
-        elif 400 <= response.status_code < 500:
+        elif 400 < response.status_code < 500:
             msg = (
                 f"{response.status_code} Client Error: "
                 f"{response.reason} for path: {self.path}"
             )
-            raise FatalAPIError(msg)
+            curl_command = curlify.to_curl(response.request)
+            logging.error(f"Response code: {response.status_code}, info: {response.text}")
+            logging.error(f"CURL command for failed request: {curl_command}")
+            raise FatalAPIError(RetriableAPIError(f"Msg {msg}, response {response.text}"))
 
     @staticmethod
     def extract_type(field):
