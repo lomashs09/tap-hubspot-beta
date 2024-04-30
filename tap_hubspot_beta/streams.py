@@ -836,7 +836,6 @@ class ArchivedStream(hubspotV3Stream):
 
         if archived_at > rep_key:
             return row
-
         return None
 
 
