@@ -77,7 +77,8 @@ from tap_hubspot_beta.streams import (
     EmailsAssociationStream,
     NotesAssociationStream,
     PostalAssociationStream,
-    TasksAssociationStream
+    TasksAssociationStream,
+    FormsAllStream
 )
 
 STREAM_TYPES = [
@@ -152,7 +153,8 @@ STREAM_TYPES = [
     EmailsAssociationStream,
     NotesAssociationStream,
     PostalAssociationStream,
-    TasksAssociationStream
+    TasksAssociationStream,
+    FormsAllStream,
 ]
 
 
