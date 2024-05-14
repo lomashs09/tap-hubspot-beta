@@ -23,6 +23,7 @@ import pytz
 from singer_sdk.helpers._state import log_sort_error
 from pendulum import parse
 from urllib.parse import urlencode
+import calendar
 
 association_schema = th.PropertiesList(
         th.Property("from_id", th.StringType),
@@ -1748,8 +1749,6 @@ class FormsSummaryMonthlyStream(hubspotV1Stream):
     path = "analytics/v2/reports/forms/total" # :time_period make it configurable based on further requirements
     paginate = True
     page_size = 100
-    #if requested change to be dynamic based on month
-    days_delta = 30
     start_date = None
     end_date = None
     skip = 0
@@ -1801,7 +1800,7 @@ class FormsSummaryMonthlyStream(hubspotV1Stream):
                     <= previous_token["token"].replace(tzinfo=None)
                 ):
                     start_date = previous_token["token"] + timedelta(
-                        days=self.days_delta
+                        days=1
                     )
                 #Replace timezone info with None    
                 next_token = start_date.replace(tzinfo=None)
@@ -1826,7 +1825,9 @@ class FormsSummaryMonthlyStream(hubspotV1Stream):
         #Convert to datetime if start date is in string
         if isinstance(start_date, str):
             start_date = parse(start_date)
-        end_date = start_date + timedelta(days=self.days_delta)    
+        #Set end date to last day of month      
+        last_day_of_month = calendar.monthrange(start_date.year, start_date.month)[1]
+        end_date = start_date.replace(day=last_day_of_month)    
         params['limit'] = self.page_size
         params['offset'] = skip
         params['start'] = start_date.strftime("%Y%m%d")
