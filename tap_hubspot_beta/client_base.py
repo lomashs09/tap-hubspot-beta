@@ -319,7 +319,7 @@ class hubspotStream(RESTStream):
         return True
     
     def parse_value(self, field, value):
-        if "boolean" == self.schema["properties"][field]["type"][0] and value in ["true", "false", "True", "False"]:
+        if "boolean" == self.schema["properties"].get(field, {}).get("type", [""])[0] and value in ["true", "false", "True", "False"]:
             value = True if value.lower() == "true" else False if value.lower() == "false" else value
         return value
     
