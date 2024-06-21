@@ -147,6 +147,45 @@ class Taphubspot(Tap):
                     for field in stream["schema"]["properties"]:
                         stream["schema"]["properties"][field]["field_meta"] = stream_class.fields_metadata.get(field, {})
         return catalog
+
+    @property
+    def streams(self) -> Dict[str, Stream]:
+        """Get streams discovered or catalogued for this tap.
+
+        Results will be cached after first execution.
+
+        Returns:
+            A mapping of names to streams, using discovery or a provided catalog.
+        """
+        input_catalog = self.input_catalog
+
+        if self._streams is None:
+            self._streams = {}
+            for stream in self.load_streams():
+                if input_catalog is not None:
+                    stream.apply_catalog(input_catalog)
+                
+                # add metadata visible value
+                setattr(stream.metadata[()], "visible", stream.visible_in_catalog)
+                self._streams[stream.name] = stream
+        return self._streams
+    
+
+    @property
+    def catalog_dict(self) -> dict:
+        """Get catalog dictionary.
+
+        Returns:
+            The tap's catalog as a dict
+        """
+        original_catalog = self._singer_catalog
+        # for some reason to_dict() gets rid of the value visible so we'll add it back before json dumping the catalog
+        _catalog = self._singer_catalog.to_dict()
+        new_catalog = []
+        for i, stream in enumerate(_catalog["streams"]):
+            stream["metadata"][-1]["metadata"]["visible"] = original_catalog[stream["tap_stream_id"]].metadata[()].visible
+            new_catalog.append(stream)
+        return cast(dict, {"streams": new_catalog})
     
     @final
     def load_streams(self) -> List[Stream]:
@@ -166,8 +205,6 @@ class Taphubspot(Tap):
             stream_type = type(stream)
             if stream_type not in streams_by_type:
                 streams_by_type[stream_type] = []
-            
-            
             streams_by_type[stream_type].append(stream)
 
         # Initialize child streams list for parents
@@ -194,9 +231,10 @@ class Taphubspot(Tap):
                     base_name = stream.name.split("_v3")[0]
                     # excluding streams with the same base name from the catalog
                     if base_name in streams_by_type.keys():
-                        # if same name stream is a parent stream keep in catalog but change name
+                        # if same name stream is a parent stream change name and change visible = False
                         if streams_by_type[base_name].child_streams:
                             streams_by_type[base_name].name = f"is_parent_stream_{base_name}"
+                            streams_by_type[base_name].visible_in_catalog = False
                         else:
                             del_streams.append(base_name)
                     # change v3 name to base_name
