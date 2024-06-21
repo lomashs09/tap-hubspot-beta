@@ -63,7 +63,7 @@ STREAM_TYPES = [
     ContactListData,
     ProductsStream,
     LineItemsStream,
-    ArchivedLineItemsStream,
+    # ArchivedLineItemsStream,
     # AssociationDealsContactsStream,
     # AssociationDealsCompaniesStream,
     # AssociationDealsLineItemsStream,
@@ -92,8 +92,8 @@ STREAM_TYPES = [
     # AssociationQuotesDealsStream,
     ListMembershipV3Stream,
     ListSearchV3Stream,
-    ArchivedCompaniesStream,
-    ArchivedDealsStream,
+    # ArchivedCompaniesStream,
+    # ArchivedDealsStream,
     DealsAssociationParent,
     CurrenciesStream
 ]
