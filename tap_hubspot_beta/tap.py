@@ -94,7 +94,7 @@ STREAM_TYPES = [
     ListSearchV3Stream,
     # ArchivedCompaniesStream,
     # ArchivedDealsStream,
-    DealsAssociationParent,
+    # DealsAssociationParent,
     CurrenciesStream
 ]
 
