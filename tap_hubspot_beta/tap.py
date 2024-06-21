@@ -1,6 +1,6 @@
 """hubspot tap class."""
 
-from typing import List
+from typing import List, cast
 
 from singer_sdk import Stream, Tap
 from singer_sdk import typing as th
