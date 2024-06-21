@@ -64,11 +64,11 @@ STREAM_TYPES = [
     ProductsStream,
     LineItemsStream,
     ArchivedLineItemsStream,
-    AssociationDealsContactsStream,
-    AssociationDealsCompaniesStream,
-    AssociationDealsLineItemsStream,
-    AssociationContactsCompaniesStream,
-    AssociationContactsTicketsStream,
+    # AssociationDealsContactsStream,
+    # AssociationDealsCompaniesStream,
+    # AssociationDealsLineItemsStream,
+    # AssociationContactsCompaniesStream,
+    # AssociationContactsTicketsStream,
     AccountStream,
     FormsStream,
     FormSubmissionsStream,
@@ -89,7 +89,7 @@ STREAM_TYPES = [
     PostalMailStream,
     CommunicationsStream,
     QuotesStream,
-    AssociationQuotesDealsStream,
+    # AssociationQuotesDealsStream,
     ListMembershipV3Stream,
     ListSearchV3Stream,
     ArchivedCompaniesStream,
@@ -240,7 +240,7 @@ class Taphubspot(Tap):
                     # change v3 name to base_name
                     stream.name = base_name
         
-        if self.config.get("use_list_selection", False):
+        if not self.config.get("use_list_selection", False):
             del_streams = del_streams + ["contact_list", "contact_list_data"]
         
         # delete streams that have same name as v3 stream
