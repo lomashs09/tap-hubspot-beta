@@ -84,6 +84,7 @@ from tap_hubspot_beta.streams import (
     PagesSummaryMonthlyStream,
     LandingPagesSummaryMonthlyStream,
     LandingPagesStream,
+    UtmCampaignSummaryMonthlyStream,
 )
 
 STREAM_TYPES = [
@@ -165,7 +166,7 @@ STREAM_TYPES = [
     PagesSummaryMonthlyStream,
     LandingPagesSummaryMonthlyStream,
     LandingPagesStream,
-
+    UtmCampaignSummaryMonthlyStream,
 ]
 
 
