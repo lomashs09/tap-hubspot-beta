@@ -2080,4 +2080,35 @@ class LandingPagesStream(hubspotV3Stream):
         th.Property("useFeaturedImage", th.BooleanType),
         th.Property("widgetContainers", th.CustomType({"type": ["object", "string"]})),
         th.Property("widgets", th.CustomType({"type": ["object", "string"]})),
-    ).to_dict()    
+    ).to_dict()
+
+class UtmCampaignSummaryMonthlyStream(FormsSummaryMonthlyStream):
+    # https://legacydocs.hubspot.com/docs/methods/analytics/get-analytics-data-breakdowns
+    """Utm Campaign Summary Monthly Stream"""
+    name = "utm_campaigns_summary_monthly"
+    path = "analytics/v2/reports/utm-campaigns/total"
+
+    schema = th.PropertiesList(
+        th.Property("totals", th.ObjectType(
+            th.Property("contactsPerPageview", th.NumberType),
+            th.Property("returningVisits", th.NumberType),
+            th.Property("rawViews", th.NumberType),
+            th.Property("standardViews", th.NumberType),
+            th.Property("sessionToContactRate", th.NumberType),
+            th.Property("pageviewsPerSession", th.NumberType),
+            th.Property("bounceRate", th.NumberType),
+            th.Property("visits", th.NumberType),
+            th.Property("visitors", th.NumberType),
+            th.Property("pageviewsMinusExits", th.NumberType),
+            th.Property("leads", th.NumberType),
+            th.Property("leadsPerView", th.NumberType),
+            th.Property("bounces", th.NumberType),
+            th.Property("timePerSession", th.NumberType),
+            th.Property("time", th.NumberType),
+            th.Property("contacts", th.NumberType),
+            th.Property("newVisitorSessionRate", th.NumberType),
+        )),
+        th.Property("breakdowns", th.CustomType({"type": ["array", "string"]})),
+        th.Property("start_date", th.DateType),
+        th.Property("end_date", th.DateType),
+    ).to_dict()        
