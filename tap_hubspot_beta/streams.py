@@ -2118,7 +2118,7 @@ class GeolocationSummaryMonthlyStream(FormsSummaryMonthlyStream):
     # https://legacydocs.hubspot.com/docs/methods/analytics/get-analytics-data-breakdowns
     """Geolocation Summary Monthly Stream"""
     name = "geolocation_summary_monthly"
-    path = "analytics/v2/reports/utm-campaigns/total"
+    path = "analytics/v2/reports/geolocation/total"
 
     schema = th.PropertiesList(
         th.Property("totals", th.ObjectType(
